@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+{% block title %}4. PROFESSORES - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<div class="sheet-container">
+    <!-- Banner de Cabeçalho estilo Planilha -->
+    <div class="sheet-header-banner">
+        <h2>CADASTRO DO QUADRO DE PROFESSORES DA UNIDADE ESCOLAR</h2>
+        <p>UTILIZE UMA LINHA PARA CADA MATRÍCULA. INFORME VÍNCULO, UTB, CARGA HORÁRIA E, QUANDO HOUVER, REDUÇÃO LEGAL, REGÊNCIA AUTORIZADA, ATO, FUNDAMENTO E VALIDADE. FORMATO DA MATRÍCULA: 000.000-0.</p>
+    </div>
+
+    <!-- Formulário de Cadastro -->
+    <form method="POST" class="form-card sheet-form">
+        <input type="hidden" name="action" value="add">
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Matrícula * (000.000-0)</label>
+                <input type="text" name="matricula" required placeholder="000.000-0" pattern="\d{3}\.\d{3}-\d">
+            </div>
+
+            <div class="form-group">
+                <label>CPF</label>
+                <input type="text" name="cpf" placeholder="000.000.000-00">
+            </div>
+
+            <div class="form-group">
+                <label>Nome Completo *</label>
+                <input type="text" name="nome" required style="text-transform:uppercase" placeholder="NOME DO PROFESSOR">
+            </div>
+
+            <div class="form-group">
+                <label>Vínculo *</label>
+                <select name="vinculo" required>
+                    <option value="EFETIVO">EFETIVO</option>
+                    <option value="PRESTADOR DE SERVIÇO">PRESTADOR DE SERVIÇO</option>
+                    <option value="FADEX">FADEX</option>
+                    <option value="CONTRATO DE EMERGÊNCIA">CONTRATO DE EMERGÊNCIA</option>
+                    <option value="OUTRO">OUTRO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>UTB é Esta Escola? *</label>
+                <select name="utb_esta_escola" required>
+                    <option value="SIM">SIM</option>
+                    <option value="NÃO">NÃO</option>
+                    <option value="SITUAÇÃO A VERIFICAR">SITUAÇÃO A VERIFICAR</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>UTB Informada</label>
+                <input type="text" name="utb_informada" style="text-transform:uppercase" placeholder="NOME DA ESCOLA DA UTB">
+            </div>
+
+            <div class="form-group">
+                <label>Forma de Atuação *</label>
+                <select name="forma_atuacao" required>
+                    <option value="CUMPRE INTEGRALMENTE A CH NESTA UNIDADE">CUMPRE INTEGRALMENTE A CH NESTA UNIDADE</option>
+                    <option value="COMPLEMENTA CH NESTA UNIDADE">COMPLEMENTA CH NESTA UNIDADE</option>
+                    <option value="CUMPRE PARTE DA CH EM OUTRA UNIDADE">CUMPRE PARTE DA CH EM OUTRA UNIDADE</option>
+                    <option value="TEMPORARIAMENTE EM EXERCÍCIO NESTA UNIDADE">TEMPORARIAMENTE EM EXERCÍCIO NESTA UNIDADE</option>
+                    <option value="EXERCE FUNÇÃO DIFERENTE DA DOCÊNCIA">EXERCE FUNÇÃO DIFERENTE DA DOCÊNCIA</option>
+                    <option value="OUTRA SITUAÇÃO">OUTRA SITUAÇÃO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>CH Original (Vinculo) *</label>
+                <input type="number" name="carga_horaria_original" required value="40" min="1" max="60">
+            </div>
+
+            <div class="form-group">
+                <label>Possui CH Estadual Fora desta Escola? *</label>
+                <select name="possui_ch_fora" required>
+                    <option value="NÃO">NÃO</option>
+                    <option value="SIM">SIM</option>
+                    <option value="SITUAÇÃO A VERIFICAR">SITUAÇÃO A VERIFICAR</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Outra Unidade / Função do Vínculo</label>
+                <input type="text" name="outra_unidade" style="text-transform:uppercase" placeholder="OUTRA ESCOLA / LOCAL">
+            </div>
+
+            <div class="form-group">
+                <label>CH Fora desta Escola</label>
+                <input type="number" name="ch_fora" value="0" min="0" max="60">
+            </div>
+
+            <div class="form-group">
+                <label>Conselho Escolar *</label>
+                <select name="conselho_escolar" required>
+                    <option value="NÃO PARTICIPA">NÃO PARTICIPA</option>
+                    <option value="TITULAR">TITULAR</option>
+                    <option value="SUPLENTE">SUPLENTE</option>
+                    <option value="PRESIDENTE">PRESIDENTE</option>
+                    <option value="VICE-PRESIDENTE">VICE-PRESIDENTE</option>
+                    <option value="SECRETÁRIO(A)">SECRETÁRIO(A)</option>
+                    <option value="OUTRA FUNÇÃO">OUTRA FUNÇÃO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Áreas de Planejamento *</label>
+                <select name="areas_planejamento" required>
+                    <option value="LINGUAGENS">LINGUAGENS</option>
+                    <option value="MATEMÁTICA">MATEMÁTICA</option>
+                    <option value="CIÊNCIAS DA NATUREZA">CIÊNCIAS DA NATUREZA</option>
+                    <option value="CIÊNCIAS HUMANAS E SOCIAIS">CIÊNCIAS HUMANAS E SOCIAIS</option>
+                    <option value="FORMAÇÃO TÉCNICA E PROFISSIONAL">FORMAÇÃO TÉCNICA E PROFISSIONAL</option>
+                    <option value="ANOS INICIAIS">ANOS INICIAIS</option>
+                    <option value="ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE">ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE</option>
+                    <option value="REGIME DE PROGRESSÃO PARCIAL - RPP">REGIME DE PROGRESSÃO PARCIAL - RPP</option>
+                    <option value="LÍNGUA PORTUGUESA">LÍNGUA PORTUGUESA</option>
+                    <option value="OUTRA">OUTRA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Dias de Planejamento</label>
+                <input type="text" name="dias_planejamento" style="text-transform:uppercase" placeholder="EX: SEGUNDA / QUARTA">
+            </div>
+
+            <div class="form-group">
+                <label>Redução Legal Vigente? *</label>
+                <select name="reducao_legal_vigente" required>
+                    <option value="NÃO">NÃO</option>
+                    <option value="SIM">SIM</option>
+                    <option value="SITUAÇÃO A VERIFICAR">SITUAÇÃO A VERIFICAR</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>CH Autorizada nesta Unidade *</label>
+                <input type="number" name="carga_horaria_autorizada" required value="40" min="0" max="60">
+            </div>
+
+            <div class="form-group">
+                <label>Regência Autorizada</label>
+                <input type="number" name="regencia_autorizada" placeholder="EX: 26" min="0" max="60">
+            </div>
+
+            <div class="form-group">
+                <label>Ato de Autorização</label>
+                <input type="text" name="ato_autorizacao" style="text-transform:uppercase" placeholder="EX: PORTARIA Nº 000/2026">
+            </div>
+
+            <div class="form-group">
+                <label>Fundamento Legal</label>
+                <input type="text" name="fundamento_legal" style="text-transform:uppercase" placeholder="EX: ART. 10 DA LEI...">
+            </div>
+
+            <div class="form-group">
+                <label>Validade do Ato</label>
+                <input type="date" name="validade_ato">
+            </div>
+
+            <div class="form-group">
+                <label>Conferido pela Escola? *</label>
+                <select name="situacao_cadastro" required>
+                    <option value="SIM">SIM</option>
+                    <option value="NÃO">NÃO</option>
+                    <option value="SITUAÇÃO A VERIFICAR">SITUAÇÃO A VERIFICAR</option>
+                </select>
+            </div>
+
+            <div class="form-group full">
+                <label>Observações</label>
+                <textarea name="observacoes" rows="2" style="text-transform:uppercase" placeholder="OBSERVAÇÕES COMPLEMENTARES SOBRE O PROFESSOR"></textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Cadastrar Professor</button>
+        </div>
+    </form>
+
+    <!-- Tabela estilo Planilha -->
+    <div class="table-card sheet-table-card">
+        <h3>Professores Cadastrados ({{ registros|length }})</h3>
+        {% if registros %}
+        <div class="table-responsive">
+            <table class="sheet-table">
+                <thead>
+                    <tr class="header-main">
+                        <th class="text-center">Nº</th>
+                        <th>MATRÍCULA</th>
+                        <th>CPF</th>
+                        <th>NOME COMPLETO</th>
+                        <th>VÍNCULO</th>
+                        <th>UTB ESTA ESCOLA?</th>
+                        <th>UTB INFORMADA</th>
+                        <th>FORMA DE ATUAÇÃO</th>
+                        <th class="text-center">CH ORIG.</th>
+                        <th>CH FORA?</th>
+                        <th>OUTRA UNIDADE/FUNÇÃO</th>
+                        <th class="text-center">CH FORA</th>
+                        <th>CONSELHO ESCOLAR</th>
+                        <th>ÁREAS PLANEJAMENTO</th>
+                        <th>DIAS PLANEJ.</th>
+                        <th>REDUÇÃO VIGENTE?</th>
+                        <th class="text-center">CH AUT.</th>
+                        <th class="text-center">REGÊNCIA AUT.</th>
+                        <th>ATO AUTORIZAÇÃO</th>
+                        <th>FUNDAMENTO LEGAL</th>
+                        <th>VALIDADE ATO</th>
+                        <th>CONFERIDO?</th>
+                        <th>OBSERVAÇÕES</th>
+                        <th class="text-center">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td><strong>{{ r.matricula }}</strong></td>
+                        <td>{{ r.cpf or '-' }}</td>
+                        <td><strong>{{ r.nome }}</strong></td>
+                        <td>{{ r.vinculo or '-' }}</td>
+                        <td>{{ r.utb_esta_escola or '-' }}</td>
+                        <td>{{ r.utb_informada or '-' }}</td>
+                        <td>{{ r.forma_atuacao or '-' }}</td>
+                        <td class="text-center">{{ r.carga_horaria_original or '-' }}</td>
+                        <td>{{ r.possui_ch_fora or '-' }}</td>
+                        <td>{{ r.outra_unidade or '-' }}</td>
+                        <td class="text-center">{{ r.ch_fora or '0' }}</td>
+                        <td>{{ r.conselho_escolar or '-' }}</td>
+                        <td>{{ r.areas_planejamento or '-' }}</td>
+                        <td>{{ r.dias_planejamento or '-' }}</td>
+                        <td>{{ r.reducao_legal_vigente or '-' }}</td>
+                        <td class="text-center"><strong>{{ r.carga_horaria_autorizada or '-' }}</strong></td>
+                        <td class="text-center">{{ r.regencia_autorizada or '-' }}</td>
+                        <td>{{ r.ato_autorizacao or '-' }}</td>
+                        <td>{{ r.fundamento_legal or '-' }}</td>
+                        <td>{{ r.validade_ato.strftime('%d/%m/%Y') if r.validade_ato else '-' }}</td>
+                        <td>
+                            <span class="badge-status {{ 'status-ativo' if r.situacao_cadastro == 'SIM' else 'status-outros' }}">
+                                {{ r.situacao_cadastro or 'SIM' }}
+                            </span>
+                        </td>
+                        <td>{{ r.observacoes or '-' }}</td>
+                        <td class="text-center">
+                            <form method="POST" style="display:inline" onsubmit="return confirm('Remover este professor?')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="{{ r.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">Nenhum professor cadastrado.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

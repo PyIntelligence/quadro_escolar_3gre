@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block title %}9. CONFIRMAÇÃO FINAL - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<style>
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .kpi-title { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
+    .kpi-value { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-top: 5px; }
+    
+    @media print {
+        .no-print { display: none !important; }
+        .sheet-container { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        body { background: white !important; font-size: 12pt; }
+    }
+</style>
+
+<div class="sheet-container full-width-sheet" style="margin-top: 15px;">
+
+    <!-- CABEÇALHO DA PÁGINA -->
+    <div class="sheet-header-banner" style="background: linear-gradient(135deg, #0b2545, #134074); color: white; padding: 18px 20px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+            <div>
+                <h2 style="margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px;">HOMOLOGAÇÃO E CONFIRMAÇÃO FINAL</h2>
+            </div>
+            {% if escola.status_confirmacao %}
+                <span style="background-color: #27ae60; color: #ffffff; font-size: 0.85rem; font-weight: 700; padding: 6px 14px; border-radius: 20px;">
+                    ✔ HOMOLOGADO EM BANCO
+                </span>
+            {% else %}
+                <span style="background-color: #e67e22; color: #ffffff; font-size: 0.85rem; font-weight: 700; padding: 6px 14px; border-radius: 20px;">
+                    ⏳ AGUARDANDO CONFIRMAÇÃO
+                </span>
+            {% endif %}
+        </div>
+        <p style="margin-top: 10px; margin-bottom: 5px; padding: 5px 0; line-height: 1.5; font-size: 0.88rem; opacity: 0.95;">
+            Após concluir os cadastros e validar os alertas técnicos, declare a veracidade das informações para encerrar o levantamento da Unidade Escolar.
+        </p>
+    </div>
+
+    <!-- Seletor de Escola idêntico ao padrão do sistema -->
+    <div class="card mb-3 no-print" style="border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 15px;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; gap: 10px;">
+            <strong style="color: #003366; font-size: 1rem;">Unidade Escolar Selecionada:</strong>
+            <div class="seletor-container d-flex align-items-center">
+                <label for="seletor_escola" class="fw-bold me-2" style="white-space: nowrap; margin-right: 8px; font-size: 0.88rem;">Selecionar Escola:</label>
+                <select id="seletor_escola" name="codigo_inep_seletor" class="form-select d-inline-block w-auto" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ced4da; font-size: 0.88rem;">
+                    {% for item in todas_escolas %}
+                        <option value="{{ item.inep_visual }}" {% if item.inep_visual == inep_selecionado %}selected{% endif %}>
+                            {{ item.nome }} (INEP: {{ item.inep_visual }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. RESUMO DOS DADOS DA UNIDADE (SNAPSHOT CONSOLIDADO) -->
+    <div class="table-card sheet-table-card" style="margin-bottom: 25px; background: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1; padding: 15px;">
+        <h3 style="font-size: 1.05rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px; color: #0b2545; font-weight: 700;">
+            📊 Snapshot Consolidado dos Dados Registrados
+        </h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 10px;">
+            <div class="kpi-card">
+                <div class="kpi-title">Unidade Escolar</div>
+                <div class="kpi-value" style="font-size: 1.05rem; color: #0d47a1;">{{ escola.nome }}</div>
+                <small class="text-muted">INEP: {{ escola.inep_visual or '-' }}</small>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Gestor Responsável</div>
+                <div class="kpi-value" style="font-size: 1.05rem; color: #0d47a1;">{{ escola.gestor or 'NÃO INFORMADO' }}</div>
+                <small class="text-muted">GRE: {{ escola.gre or '3ª GRE' }}</small>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Corpo Docente</div>
+                <div class="kpi-value" style="color: #1b5e20;">{{ resumo.total_professores }}</div>
+                <small class="text-muted">Professores Cadastrados</small>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Apoio CLT</div>
+                <div class="kpi-value" style="color: #1b5e20;">{{ resumo.total_apoio }}</div>
+                <small class="text-muted">Funcionários Registrados</small>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">Carga Horária (Aut / Aloc)</div>
+                <div class="kpi-value" style="font-size: 1.1rem; color: #0b2545;">{{ resumo.total_ch_autorizada }}h / {{ resumo.total_ch_alocada }}h</div>
+                <small class="text-muted">
+                    {% if resumo.saldo_ch == 0 %}
+                        <span style="color: #16a34a; font-weight: bold;">✔ Carga Equilibrada</span>
+                    {% else %}
+                        <span style="color: #dc2626; font-weight: bold;">Diferença: {{ resumo.saldo_ch }}h</span>
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. DIAGNÓSTICO E BLOQUEIOS DE SEGURANÇA -->
+    {% if pendencias %}
+        <div class="alert alert-danger" style="border-left: 5px solid #dc3545; padding: 15px; margin-bottom: 25px; border-radius: 6px; background-color: #f8d7da; color: #721c24;">
+            <h4 style="margin-top: 0; font-size: 1rem; font-weight: 700;">✖ Não é possível confirmar a homologação ainda!</h4>
+            <p style="font-size: 0.85rem; margin-bottom: 8px;">Foram encontradas pendências impeditivas que precisam ser corrigidas:</p>
+            <ul style="margin-bottom: 10px; font-size: 0.85rem; padding-left: 20px;">
+                {% for p in pendencias %}
+                    <li><strong>{{ p }}</strong></li>
+                {% endfor %}
+            </ul>
+            <small style="font-size: 0.8rem;">Por favor, navegue pelas abas anteriores, realize os devidos preenchimentos e retorne aqui para finalizar.</small>
+        </div>
+    {% elif alertas and not escola.status_confirmacao %}
+        <div class="alert alert-warning" style="border-left: 5px solid #ffc107; padding: 12px; margin-bottom: 25px; border-radius: 6px; font-size: 0.85rem; background-color: #fff3cd; color: #664d03;">
+            <strong>⚠ Alertas Informativos (Não Impeditivos):</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                {% for a in alertas %}
+                    <li>{{ a }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% elif pode_confirmar and not escola.status_confirmacao %}
+        <div class="alert alert-success" style="border-left: 5px solid #198754; padding: 12px; margin-bottom: 25px; border-radius: 6px; font-size: 0.85rem; background-color: #d1e7dd; color: #0f5132;">
+            ✔ <strong>Tudo pronto!</strong> Nenhuma pendência impeditiva foi encontrada. Preencha o termo abaixo e confirme a homologação.
+        </div>
+    {% endif %}
+
+    <!-- 3. PAINEL DE CONFIRMAÇÃO OU COMPROVANTE GERADO -->
+    <div class="table-card sheet-table-card" style="margin-bottom: 25px; background: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1; padding: 15px;">
+        {% if escola.status_confirmacao %}
+            <!-- VISUALIZAÇÃO DO COMPROVANTE OFICIAL -->
+            <div style="padding: 20px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h3 style="margin: 0; color: #166534; font-size: 1.2rem; font-weight: 800;">
+                            ✔ COMPROVANTE DE HOMOLOGAÇÃO OFICIAL
+                        </h3>
+                        <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #15803d;">
+                            O levantamento de dados desta Unidade Escolar foi confirmado e homologado no banco de dados.
+                        </p>
+                    </div>
+                    <div class="no-print" style="display: flex; gap: 10px;">
+                        <button onclick="window.print()" class="btn btn-outline-success btn-sm" style="font-weight: 700;">
+                            🖨 Imprimir Comprovante
+                        </button>
+                    </div>
+                </div>
+
+                <hr style="margin: 15px 0; border-top: 1px solid #bbf7d0;">
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; font-size: 0.85rem; color: #1f2937;">
+                    <div>
+                        <strong>Responsável pela Homologação:</strong><br>
+                        <span style="font-weight: 700; text-transform: uppercase;">{{ escola.responsavel_preenchimento or 'NÃO INFORMADO' }}</span>
+                    </div>
+                    <div>
+                        <strong>Cargo / Função:</strong><br>
+                        <span style="font-weight: 700; text-transform: uppercase;">{{ escola.cargo_funcao or 'GESTÃO ESCOLAR' }}</span>
+                    </div>
+                    <div>
+                        <strong>Data e Hora da Validação:</strong><br>
+                        <span style="font-weight: 700;">
+                            {% if escola.data_confirmacao %}
+                                {{ escola.data_confirmacao.strftime('%d/%m/%Y às %H:%M:%S') }}
+                            {% else %}
+                                Registrada no sistema
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Status do Registro:</strong><br>
+                        <span class="badge bg-success" style="font-size: 0.8rem; padding: 5px 10px;">AUTENTICADO / HOMOLOGADO</span>
+                    </div>
+                </div>
+
+                <!-- FORMULÁRIO PARA REABRIR O PREENCHIMENTO -->
+                <div class="no-print" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #cbd5e1; display: flex; justify-content: flex-end;">
+                    <form method="POST" style="margin: 0;" onsubmit="return confirm('Tem certeza que deseja reabrir o preenchimento para edições?');">
+                        <input type="hidden" name="action" value="reabrir">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" style="font-size: 0.78rem; font-weight: bold;">
+                            🔓 Reabrir Preenchimento para Correções
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% elif pode_confirmar %}
+            <!-- FORMULÁRIO DE CONFIRMAÇÃO -->
+            <h3 style="font-size: 1.05rem; margin-bottom: 12px; color: #0b2545; font-weight: 700;">Termo de Declaração e Responsabilidade</h3>
+            <form method="POST" class="form-card" style="padding: 18px; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <input type="hidden" name="action" value="confirmar">
+                
+                <p style="font-size: 0.85rem; color: #334155; margin-bottom: 15px; line-height: 1.5;">
+                    Declaro que as informações cadastradas neste formulário foram conferidas e refletem com exatidão a realidade da unidade escolar <strong>{{ escola.nome }}</strong> na presente data, assumindo a responsabilidade pela veracidade dos dados perante a Gerência Regional de Educação (3ª GRE).
+                </p>
+
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px;">
+                    <div style="flex: 2; min-width: 250px;">
+                        <label style="font-size: 0.75rem; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">NOME COMPLETO DO RESPONSÁVEL *</label>
+                        <input type="text" name="responsavel_final" class="form-control" placeholder="DIGITE O NOME COMPLETO" required style="text-transform: uppercase; font-size: 0.85rem;">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="font-size: 0.75rem; font-weight: bold; color: #475569; display: block; margin-bottom: 4px;">CARGO / FUNÇÃO *</label>
+                        <input type="text" name="cargo_funcao" class="form-control" placeholder="EX: GESTOR(A), SECRETÁRIO(A)" required style="text-transform: uppercase; font-size: 0.85rem;">
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+                    <button type="submit" class="btn btn-success btn-lg" style="font-weight: bold; font-size: 0.9rem; padding: 10px 24px; background-color: #198754; border: none;">
+                        ✔ CONFIRMAR E HOMOLOGAR INFORMAÇÕES
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+                <p style="margin: 0; font-size: 0.9rem;">Resolva as pendências acima para liberar o botão de homologação.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- NAVEGAÇÃO -->
+    <div class="form-actions no-print" style="margin-top: 1.5rem; display: flex; gap: 10px;">
+        <a href="{{ url_for('escolas.index', inep=active_inep) if active_inep else url_for('escolas.index') }}" class="btn btn-secondary">Voltar ao Início</a>
+        <a href="{{ url_for('conferencia_final.conferencia_final', inep=active_inep) if active_inep else url_for('conferencia_final.conferencia_final') }}" class="btn btn-outline-secondary">Ver Painel de Conferência</a>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const seletorEscola = document.getElementById('seletor_escola');
+    if (seletorEscola) {
+        seletorEscola.addEventListener('change', function() {
+            const inepSelecionado = this.value;
+            if (inepSelecionado) {
+                window.location.href = "{{ url_for('confirmacao_final.confirmacao_final') }}?inep=" + encodeURIComponent(inepSelecionado);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

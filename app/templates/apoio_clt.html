@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+{% block title %}2. APOIO CLT - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<div class="sheet-container full-width-sheet">
+    <!-- Banner de Cabeçalho estilo Planilha Oficial -->
+    <div class="sheet-header-banner">
+        <div class="banner-content">
+            <div>
+                <h2>CADASTRO DOS PROFISSIONAIS TERCEIRIZADOS - REGIME CLT</h2>
+                <p>
+                    CADASTRE CADA PROFISSIONAL UMA ÚNICA VEZ, UTILIZANDO O CPF COMO IDENTIFICADOR. INFORME EMPRESA/CONTRATO, FUNÇÃO CONTRATADA, FUNÇÃO EXERCIDA, CARGA HORÁRIA, TURNOS, DIAS, TELEFONE, DATA DE INÍCIO, SITUAÇÃO E OBSERVAÇÕES.
+                </p>
+            </div>
+            {% if escola %}
+            <div class="escola-badge">
+                <strong>{{ escola.unidade_escolar or escola.nome }}</strong>
+                <small>INEP: {{ escola.codigo_inep or escola.inep_visual or escola.inep }}</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sanfona / Botão para Adicionar Novo Profissional Terceirizado -->
+    <details class="collapsible-card">
+        <summary class="collapsible-summary">
+            <span class="summary-title">
+                <span class="icon">➕</span> 
+                <span>Adicionar Profissional Terceirizado (CLT)</span>
+            </span>
+            <span class="toggle-icon">▼</span>
+        </summary>
+        <div class="form-card sheet-form">
+            <form method="POST" action="{{ url_for('apoio_clt.apoio_clt', inep=inep) if 'apoio_clt.apoio_clt' in url_map else '' }}">
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="inep" value="{{ inep or '' }}">
+
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label>CPF *</label>
+                        <input type="text" name="cpf" required placeholder="000.000.000-00" pattern="\d{3}\.\d{3}\.\d{3}-\d{2}">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Nome Completo *</label>
+                        <input type="text" name="nome" required style="text-transform:uppercase" placeholder="NOME COMPLETO DO PROFISSIONAL">
+                    </div>
+
+                    <div class="form-group">
+                        <label>ID/Registro da Empresa</label>
+                        <input type="text" name="registro_empresa" style="text-transform:uppercase" placeholder="EX: REG-001">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Empresa Terceirizada / Contrato *</label>
+                        <input type="text" name="empresa_contrato" required style="text-transform:uppercase" placeholder="NOME DA EMPRESA">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Função Contratada (CTPS) *</label>
+                        <select name="funcao_contratada" required>
+                            <option value="">SELECIONE...</option>
+                            <option value="AGENTE DE PORTARIA">AGENTE DE PORTARIA</option>
+                            <option value="ALMOXARIFE">ALMOXARIFE</option>
+                            <option value="APOIO ESCOLAR">APOIO ESCOLAR</option>
+                            <option value="ASSISTENTE ADMINISTRATIVO">ASSISTENTE ADMINISTRATIVO</option>
+                            <option value="AUXILIAR ADMINISTRATIVO">AUXILIAR ADMINISTRATIVO</option>
+                            <option value="AUXILIAR DE BIBLIOTECA">AUXILIAR DE BIBLIOTECA</option>
+                            <option value="AUXILIAR DE COZINHA">AUXILIAR DE COZINHA</option>
+                            <option value="AUXILIAR DE LIMPEZA">AUXILIAR DE LIMPEZA</option>
+                            <option value="AUXILIAR DE MANUTENÇÃO PREDIAL">AUXILIAR DE MANUTENÇÃO PREDIAL</option>
+                            <option value="AUXILIAR DE SECRETARIA">AUXILIAR DE SECRETARIA</option>
+                            <option value="AUXILIAR DE SERVIÇOS GERAIS">AUXILIAR DE SERVIÇOS GERAIS</option>
+                            <option value="CONTROLADOR(A) DE ACESSO">CONTROLADOR(A) DE ACESSO</option>
+                            <option value="COPEIRO(A)">COPEIRO(A)</option>
+                            <option value="COZINHEIRO(A)/MERENDEIRO(A)">COZINHEIRO(A)/MERENDEIRO(A)</option>
+                            <option value="CUIDADOR(A)">CUIDADOR(A)</option>
+                            <option value="ELETRICISTA">ELETRICISTA</option>
+                            <option value="ENCANADOR(A)">ENCANADOR(A)</option>
+                            <option value="ENCARREGADO(A)/SUPERVISOR(A) DE SERVIÇOS">ENCARREGADO(A)/SUPERVISOR(A) DE SERVIÇOS</option>
+                            <option value="INSPETOR(A) DE ALUNOS">INSPETOR(A) DE ALUNOS</option>
+                            <option value="INTÉRPRETE DE LIBRAS">INTÉRPRETE DE LIBRAS</option>
+                            <option value="JARDINEIRO(A)">JARDINEIRO(A)</option>
+                            <option value="MANUTENÇÃO GERAL">MANUTENÇÃO GERAL</option>
+                            <option value="MEDIADOR(A) ESCOLAR">MEDIADOR(A) ESCOLAR</option>
+                            <option value="MONITOR(A) ESCOLAR">MONITOR(A) ESCOLAR</option>
+                            <option value="MOTORISTA">MOTORISTA</option>
+                            <option value="PEDREIRO(A)">PEDREIRO(A)</option>
+                            <option value="PORTEIRO(A)">PORTEIRO(A)</option>
+                            <option value="PROFISSIONAL DE APOIO ESCOLAR">PROFISSIONAL DE APOIO ESCOLAR</option>
+                            <option value="RECEPCIONISTA">RECEPCIONISTA</option>
+                            <option value="SECRETÁRIO(A) ESCOLAR">SECRETÁRIO(A) ESCOLAR</option>
+                            <option value="SERVENTE">SERVENTE</option>
+                            <option value="TÉCNICO(A) DE INFORMÁTICA">TÉCNICO(A) DE INFORMÁTICA</option>
+                            <option value="VIGIA">VIGIA</option>
+                            <option value="VIGILANTE">VIGILANTE</option>
+                            <option value="OUTRA FUNÇÃO - DESCREVER NAS OBSERVAÇÕES">OUTRA FUNÇÃO - DESCREVER NAS OBSERVAÇÕES</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Função Efetivamente Exercida *</label>
+                        <select name="funcao_exercida" required>
+                            <option value="">SELECIONE...</option>
+                            <option value="AGENTE DE PORTARIA">AGENTE DE PORTARIA</option>
+                            <option value="ALMOXARIFE">ALMOXARIFE</option>
+                            <option value="APOIO ESCOLAR">APOIO ESCOLAR</option>
+                            <option value="ASSISTENTE ADMINISTRATIVO">ASSISTENTE ADMINISTRATIVO</option>
+                            <option value="AUXILIAR ADMINISTRATIVO">AUXILIAR ADMINISTRATIVO</option>
+                            <option value="AUXILIAR DE BIBLIOTECA">AUXILIAR DE BIBLIOTECA</option>
+                            <option value="AUXILIAR DE COZINHA">AUXILIAR DE COZINHA</option>
+                            <option value="AUXILIAR DE LIMPEZA">AUXILIAR DE LIMPEZA</option>
+                            <option value="AUXILIAR DE MANUTENÇÃO PREDIAL">AUXILIAR DE MANUTENÇÃO PREDIAL</option>
+                            <option value="AUXILIAR DE SECRETARIA">AUXILIAR DE SECRETARIA</option>
+                            <option value="AUXILIAR DE SERVIÇOS GERAIS">AUXILIAR DE SERVIÇOS GERAIS</option>
+                            <option value="CONTROLADOR(A) DE ACESSO">CONTROLADOR(A) DE ACESSO</option>
+                            <option value="COPEIRO(A)">COPEIRO(A)</option>
+                            <option value="COZINHEIRO(A)/MERENDEIRO(A)">COZINHEIRO(A)/MERENDEIRO(A)</option>
+                            <option value="CUIDADOR(A)">CUIDADOR(A)</option>
+                            <option value="ELETRICISTA">ELETRICISTA</option>
+                            <option value="ENCANADOR(A)">ENCANADOR(A)</option>
+                            <option value="ENCARREGADO(A)/SUPERVISOR(A) DE SERVIÇOS">ENCARREGADO(A)/SUPERVISOR(A) DE SERVIÇOS</option>
+                            <option value="INSPETOR(A) DE ALUNOS">INSPETOR(A) DE ALUNOS</option>
+                            <option value="INTÉRPRETE DE LIBRAS">INTÉRPRETE DE LIBRAS</option>
+                            <option value="JARDINEIRO(A)">JARDINEIRO(A)</option>
+                            <option value="MANUTENÇÃO GERAL">MANUTENÇÃO GERAL</option>
+                            <option value="MEDIADOR(A) ESCOLAR">MEDIADOR(A) ESCOLAR</option>
+                            <option value="MONITOR(A) ESCOLAR">MONITOR(A) ESCOLAR</option>
+                            <option value="MOTORISTA">MOTORISTA</option>
+                            <option value="PEDREIRO(A)">PEDREIRO(A)</option>
+                            <option value="PORTEIRO(A)">PORTEIRO(A)</option>
+                            <option value="PROFISSIONAL DE APOIO ESCOLAR">PROFISSIONAL DE APOIO ESCOLAR</option>
+                            <option value="RECEPCIONISTA">RECEPCIONISTA</option>
+                            <option value="SECRETÁRIO(A) ESCOLAR">SECRETÁRIO(A) ESCOLAR</option>
+                            <option value="SERVENTE">SERVENTE</option>
+                            <option value="TÉCNICO(A) DE INFORMÁTICA">TÉCNICO(A) DE INFORMÁTICA</option>
+                            <option value="VIGIA">VIGIA</option>
+                            <option value="VIGILANTE">VIGILANTE</option>
+                            <option value="OUTRA FUNÇÃO - DESCREVER NAS OBSERVAÇÕES">OUTRA FUNÇÃO - DESCREVER NAS OBSERVAÇÕES</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Setor / Local de Atuação *</label>
+                        <select name="setor_atuacao" required>
+                            <option value="">SELECIONE...</option>
+                            <option value="ADMINISTRAÇÃO">ADMINISTRAÇÃO</option>
+                            <option value="ÁREAS EXTERNAS">ÁREAS EXTERNAS</option>
+                            <option value="BIBLIOTECA">BIBLIOTECA</option>
+                            <option value="COZINHA">COZINHA</option>
+                            <option value="INCLUSÃO/APOIO AO ESTUDANTE">INCLUSÃO/APOIO AO ESTUDANTE</option>
+                            <option value="LIMPEZA E CONSERVAÇÃO">LIMPEZA E CONSERVAÇÃO</option>
+                            <option value="MANUTENÇÃO">MANUTENÇÃO</option>
+                            <option value="PORTARIA/CONTROLE DE ACESSO">PORTARIA/CONTROLE DE ACESSO</option>
+                            <option value="SECRETARIA">SECRETARIA</option>
+                            <option value="TECNOLOGIA">TECNOLOGIA</option>
+                            <option value="TRANSPORTE">TRANSPORTE</option>
+                            <option value="OUTRO - DESCREVER NAS OBSERVAÇÕES">OUTRO - DESCREVER NAS OBSERVAÇÕES</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Atividade Principal Efetivamente Exercida</label>
+                        <input type="text" name="atividade_principal" style="text-transform:uppercase" placeholder="EX: LIMPEZA DOS AMBIENTES">
+                    </div>
+
+                    <div class="form-group">
+                        <label>CH Semanal *</label>
+                        <input type="number" name="carga_horaria" required placeholder="40" min="1" max="60" value="40">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Turno(s) de Atuação *</label>
+                        <select name="turnos" required>
+                            <option value="">SELECIONE...</option>
+                            <option value="MANHÃ">MANHÃ</option>
+                            <option value="TARDE">TARDE</option>
+                            <option value="NOITE">NOITE</option>
+                            <option value="INTEGRAL">INTEGRAL</option>
+                            <option value="MANHÃ / TARDE">MANHÃ / TARDE</option>
+                            <option value="TARDE / NOITE">TARDE / NOITE</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dia(s) de Atuação *</label>
+                        <select name="dias" required>
+                            <option value="">SELECIONE...</option>
+                            <option value="SEGUNDA A SEXTA">SEGUNDA A SEXTA</option>
+                            <option value="SEGUNDA-FEIRA">SEGUNDA-FEIRA</option>
+                            <option value="TERÇA-FEIRA">TERÇA-FEIRA</option>
+                            <option value="QUARTA-FEIRA">QUARTA-FEIRA</option>
+                            <option value="QUINTA-FEIRA">QUINTA-FEIRA</option>
+                            <option value="SEXTA-FEIRA">SEXTA-FEIRA</option>
+                            <option value="SÁBADO">SÁBADO</option>
+                            <option value="ESCALA 12X36">ESCALA 12X36</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="text" name="telefone" placeholder="(83) 99100-0000">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Início na Unidade</label>
+                        <input type="date" name="data_inicio">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Situação *</label>
+                        <select name="situacao" required>
+                            <option value="EM EXERCÍCIO">EM EXERCÍCIO</option>
+                            <option value="AFASTADO">AFASTADO</option>
+                            <option value="FÉRIAS">FÉRIAS</option>
+                            <option value="LICENÇA">LICENÇA</option>
+                            <option value="DESLIGADO">DESLIGADO</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Observações</label>
+                        <textarea name="observacoes" rows="2" style="text-transform:uppercase" placeholder="INFORMAÇÕES COMPLEMENTARES"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions align-right" style="margin-top: 20px; text-align: right;">
+                    <button type="submit" class="btn btn-success" style="padding: 10px 24px; font-weight: 600; border-radius: 6px;">+ Salvar Novo Cadastrado</button>
+                </div>
+            </form>
+        </div>
+    </details>
+
+    <!-- Tabela Estilo Planilha Editável Interativa -->
+    <div class="table-card sheet-table-card">
+        <div class="table-card-header">
+            <h3>Quadro de Apoio Terceirizado CLT ({{ registros|length }} Cadastrados)</h3>
+            <span id="save-status" class="status-save-text">✔ Sincronizado com PostgreSQL</span>
+        </div>
+
+        {% if registros %}
+        <div class="table-responsive">
+            <table class="sheet-table" id="tabela-apoio-clt">
+                <thead>
+                    <tr class="header-main">
+                        <th style="width: 30px;">Nº</th>
+                        <th style="min-width: 180px;">NOME COMPLETO</th>
+                        <th style="min-width: 120px;">CPF</th>
+                        <th style="min-width: 130px;">REGISTRO EMPRESA</th>
+                        <th style="min-width: 160px;">EMPRESA / CONTRATO</th>
+                        <th style="min-width: 180px;">FUNÇÃO CONTRATADA (CTPS)</th>
+                        <th style="min-width: 180px;">FUNÇÃO EXERCIDA</th>
+                        <th style="min-width: 160px;">SETOR DE ATUAÇÃO</th>
+                        <th style="min-width: 180px;">ATIVIDADE PRINCIPAL</th>
+                        <th style="min-width: 65px;">CH</th>
+                        <th style="min-width: 130px;">TURNO(S)</th>
+                        <th style="min-width: 140px;">DIA(S)</th>
+                        <th style="min-width: 120px;">TELEFONE</th>
+                        <th style="min-width: 110px;">INÍCIO</th>
+                        <th style="min-width: 130px;">SITUAÇÃO</th>
+                        <th style="min-width: 180px;">OBSERVAÇÕES</th>
+                        <th style="min-width: 140px;">CONFERÊNCIA</th>
+                        <th style="width: 50px;">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr data-id="{{ r.id }}">
+                        <td class="text-center cell-idx"><strong>{{ loop.index }}</strong></td>
+
+                        <!-- Nome -->
+                        <td>
+                            <input type="text" name="nome" value="{{ r.nome or '' }}" class="form-sheet inline-autosave font-bold text-uppercase">
+                        </td>
+
+                        <!-- CPF -->
+                        <td>
+                            <input type="text" name="cpf" value="{{ r.cpf or '' }}" class="form-sheet inline-autosave" placeholder="000.000.000-00">
+                        </td>
+
+                        <!-- Registro Empresa -->
+                        <td>
+                            <input type="text" name="registro_empresa" value="{{ r.registro_empresa or '' }}" class="form-sheet inline-autosave text-uppercase">
+                        </td>
+
+                        <!-- Empresa Contrato -->
+                        <td>
+                            <input type="text" name="empresa_contrato" value="{{ r.empresa_contrato or '' }}" class="form-sheet inline-autosave text-uppercase">
+                        </td>
+
+                        <!-- Função Contratada -->
+                        <td>
+                            <select name="funcao_contratada" class="form-sheet inline-autosave">
+                                <option value="">SELECIONE...</option>
+                                {% for f in [
+                                    'AGENTE DE PORTARIA', 'ALMOXARIFE', 'APOIO ESCOLAR', 'ASSISTENTE ADMINISTRATIVO',
+                                    'AUXILIAR ADMINISTRATIVO', 'AUXILIAR DE BIBLIOTECA', 'AUXILIAR DE COZINHA',
+                                    'AUXILIAR DE LIMPEZA', 'AUXILIAR DE MANUTENÇÃO PREDIAL', 'AUXILIAR DE SECRETARIA',
+                                    'AUXILIAR DE SERVIÇOS GERAIS', 'CONTROLADOR(A) DE ACESSO', 'COPEIRO(A)',
+                                    'COZINHEIRO(A)/MERENDEIRO(A)', 'CUIDADOR(A)', 'ELETRICISTA', 'ENCANADOR(A)',
+                                    'ENCARREGADO(A)/SUPERVISOR(A) DE SERVIÇOS', 'INSPETOR(A) DE ALUNOS',
+                                    'INTÉRPRETE DE LIBRAS', 'JARDINEIRO(A)', 'MANUTENÇÃO GERAL', 'MEDIADOR(A) ESCOLAR',
+                                    'MONITOR(A) ESCOLAR', 'MOTORISTA', 'PEDREIRO(A)', 'PORTEIRO(A)',
+                                    'PROFISSIONAL DE APOIO ESCOLAR', 'RECEPCIONISTA', 'SECRETÁRIO(A) ESCOLAR',
+                                    'SERVENTE', 'TÉCNICO(A) DE INFORMÁTICA', 'VIGIA', 'VIGILANTE',
+                                    'OUTRA FUNÇÃO - DESCREVER NAS OBSERVAÇÕES'
+                                ] %}
+                                    <option value="{{ f }}" {% if r.funcao_contratada == f %}selected{% endif %}>{{ f }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Função Exercida -->
+                        <td>
+                            <select name="funcao_exercida" class="form-sheet inline-autosave">
+                                <option value="">SELECIONE...</option>
+                                {% for f in [
+                                    'AGENTE DE PORTARIA', 'ALMOXARIFE', 'APOIO ESCOLAR', 'ASSISTENTE ADMINISTRATIVO',
+                                    'AUXILIAR ADMINISTRATIVO', 'AUXILIAR DE BIBLIOTECA', 'AUXILIAR DE COZINHA',
+                                    'AUXILIAR DE LIMPEZA', 'AUXILIAR DE MANUTENÇÃO PREDIAL', 'AUXILIAR DE SECRETARIA',
+                                    'AUXILIAR DE SERVIÇOS GERAIS', 'CONTROLADOR(A) DE ACESSO', 'COPEIRO(A)',
+                                    'COZINHEIRO(A)/MERENDEIRO(A)', 'CUIDADOR(A)', 'ELETRICISTA', 'ENCANADOR(A)',
+                                    'ENCARREGADO(A)/SUPERVISOR(A) DE SERVIÇOS', 'INSPETOR(A) DE ALUNOS',
+                                    'INTÉRPRETE DE LIBRAS', 'JARDINEIRO(A)', 'MANUTENÇÃO GERAL', 'MEDIADOR(A) ESCOLAR',
+                                    'MONITOR(A) ESCOLAR', 'MOTORISTA', 'PEDREIRO(A)', 'PORTEIRO(A)',
+                                    'PROFISSIONAL DE APOIO ESCOLAR', 'RECEPCIONISTA', 'SECRETÁRIO(A) ESCOLAR',
+                                    'SERVENTE', 'TÉCNICO(A) DE INFORMÁTICA', 'VIGIA', 'VIGILANTE',
+                                    'OUTRA FUNÇÃO - DESCREVER NAS OBSERVAÇÕES'
+                                ] %}
+                                    <option value="{{ f }}" {% if r.funcao_exercida == f %}selected{% endif %}>{{ f }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Setor Atuação -->
+                        <td>
+                            <select name="setor_atuacao" class="form-sheet inline-autosave">
+                                <option value="">SELECIONE...</option>
+                                {% for s in [
+                                    'ADMINISTRAÇÃO', 'ÁREAS EXTERNAS', 'BIBLIOTECA', 'COZINHA',
+                                    'INCLUSÃO/APOIO AO ESTUDANTE', 'LIMPEZA E CONSERVAÇÃO', 'MANUTENÇÃO',
+                                    'PORTARIA/CONTROLE DE ACESSO', 'SECRETARIA', 'TECNOLOGIA',
+                                    'TRANSPORTE', 'OUTRO - DESCREVER NAS OBSERVAÇÕES'
+                                ] %}
+                                    <option value="{{ s }}" {% if r.setor_atuacao == s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Atividade Principal -->
+                        <td>
+                            <input type="text" name="atividade_principal" value="{{ r.atividade_principal or '' }}" class="form-sheet inline-autosave text-uppercase">
+                        </td>
+
+                        <!-- Carga Horária -->
+                        <td>
+                            <input type="number" name="carga_horaria" value="{{ r.carga_horaria or 40 }}" class="form-sheet inline-autosave text-center font-bold">
+                        </td>
+
+                        <!-- Turno(s) -->
+                        <td>
+                            <select name="turnos" class="form-sheet inline-autosave">
+                                <option value="">SELECIONE...</option>
+                                {% for t in ['MANHÃ', 'TARDE', 'NOITE', 'INTEGRAL', 'MANHÃ / TARDE', 'TARDE / NOITE'] %}
+                                    <option value="{{ t }}" {% if r.turnos == t %}selected{% endif %}>{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Dia(s) -->
+                        <td>
+                            <select name="dias" class="form-sheet inline-autosave">
+                                <option value="">SELECIONE...</option>
+                                {% for d in ['SEGUNDA A SEXTA', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO', 'ESCALA 12X36'] %}
+                                    <option value="{{ d }}" {% if r.dias == d %}selected{% endif %}>{{ d }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Telefone -->
+                        <td>
+                            <input type="text" name="telefone" value="{{ r.telefone or '' }}" class="form-sheet inline-autosave" placeholder="(83) 99100-0000">
+                        </td>
+
+                        <!-- Início -->
+                        <td>
+                            <input type="date" name="data_inicio" value="{{ r.data_inicio.strftime('%Y-%m-%d') if r.data_inicio else '' }}" class="form-sheet inline-autosave text-center">
+                        </td>
+
+                        <!-- Situação -->
+                        <td>
+                            <select name="situacao" class="form-sheet inline-autosave text-center font-bold">
+                                {% for sit in ['EM EXERCÍCIO', 'AFASTADO', 'FÉRIAS', 'LICENÇA', 'DESLIGADO'] %}
+                                    <option value="{{ sit }}" {% if r.situacao == sit %}selected{% endif %}>{{ sit }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Observações -->
+                        <td>
+                            <input type="text" name="observacoes" value="{{ r.observacoes or '' }}" class="form-sheet inline-autosave text-uppercase">
+                        </td>
+
+                        <!-- Conferência -->
+                        <td class="text-center">
+                            <span class="badge badge-conferencia">
+                                {{ r.conferencia or 'CONFORME DECLARADO' }}
+                            </span>
+                        </td>
+
+                        <!-- Ação Excluir -->
+                        <td class="text-center">
+                            <form method="POST" style="display:inline" onsubmit="return confirm('Remover este registro?')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="{{ r.id }}">
+                                <input type="hidden" name="inep" value="{{ inep or '' }}">
+                                <button type="submit" class="btn-del" title="Excluir">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">Nenhum profissional de apoio CLT cadastrado nesta unidade escolar.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Regras de Organização Visual e Alinhamento do Formulário na Sanfona */
+.form-card.sheet-form {
+    padding: 22px;
+    background: #ffffff;
+}
+.form-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+.form-group label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+    line-height: 1.3;
+    white-space: normal;
+    word-break: break-word;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    height: 38px;
+    padding: 6px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.83rem;
+    background-color: #ffffff;
+    color: #0f172a;
+    box-sizing: border-box;
+}
+.form-group textarea {
+    height: auto;
+    min-height: 60px;
+}
+.form-group.full {
+    grid-column: 1 / -1;
+}
+</style>
+{% endblock %}

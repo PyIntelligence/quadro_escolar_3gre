@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}6. QUADRO INFORMADO - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<div class="sheet-container full-width-sheet" style="margin-top: 15px;">
+
+    <!-- Banner de Cabeçalho Oficial no Modelo do Diretor -->
+    <div class="sheet-header-banner" style="background: linear-gradient(135deg, #0b2545, #134074); color: white; padding: 18px 20px; border-radius: 8px; margin-bottom: 15px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">
+        <h2 style="margin: 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800;">
+            QUADRO INFORMADO - REALIDADE ESCOLAR
+        </h2>
+        <p style="margin: 6px auto 0 auto; font-size: 0.82rem; opacity: 0.95; max-width: 1000px; line-height: 1.4; text-transform: uppercase; font-weight: 500;">
+            CONSOLIDA AUTOMATICAMENTE OS PROFESSORES, AS ATIVIDADES E AS CARGAS HORÁRIAS DECLARADAS PELA ESCOLA. RETRATA A REALIDADE INFORMADA, SEM EXIGIR CORRESPONDÊNCIA COM UM QUADRO IDEAL.
+        </p>
+    </div>
+
+    <!-- Seletor de Escola idêntico ao modelo da aba Professores -->
+    <div class="card mb-3" style="border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 15px;">
+        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; gap: 10px;">
+            <strong style="color: #003366; font-size: 1rem;">Unidade Escolar Selecionada:</strong>
+            <div class="seletor-container d-flex align-items-center">
+                <label for="seletor_escola" class="fw-bold me-2" style="white-space: nowrap; margin-right: 8px; font-size: 0.88rem;">Selecionar Escola:</label>
+                <select id="seletor_escola" name="codigo_inep_seletor" class="form-select d-inline-block w-auto" style="padding: 5px 10px; border-radius: 4px; border: 1px solid #ced4da; font-size: 0.88rem;">
+                    {% for item in todas_escolas %}
+                        <option value="{{ item.inep_visual }}" {% if item.inep_visual == inep_selecionado %}selected{% endif %}>
+                            {{ item.nome }} (INEP: {{ item.inep_visual }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Sintéticos de Carga Horária -->
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px;">
+        <div class="stat-card" style="background: #ffffff; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #0d6efd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" style="font-size: 1.6rem; font-weight: bold; color: #0d6efd;">{{ n_prof or 0 }}</div>
+            <div class="stat-label" style="color: #6c757d; font-size: 0.78rem; text-transform: uppercase; font-weight: 600;">Professores Cadastrados</div>
+        </div>
+
+        <div class="stat-card" style="background: #ffffff; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #17a2b8; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" style="font-size: 1.6rem; font-weight: bold; color: #17a2b8;">{{ total_ch_autorizada or 0 }} h</div>
+            <div class="stat-label" style="color: #6c757d; font-size: 0.78rem; text-transform: uppercase; font-weight: 600;">Total CH Declarada</div>
+        </div>
+
+        <div class="stat-card" style="background: #ffffff; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #28a745; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" style="font-size: 1.6rem; font-weight: bold; color: #28a745;">{{ total_ch_alocada or 0 }} h</div>
+            <div class="stat-label" style="color: #6c757d; font-size: 0.78rem; text-transform: uppercase; font-weight: 600;">Total CH Válida Registrada</div>
+        </div>
+
+        <div class="stat-card" style="background: #ffffff; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #ffc107; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" style="font-size: 1.6rem; font-weight: bold; color: #d39e00;">{{ qtd_incompletos or 0 }}</div>
+            <div class="stat-label" style="color: #6c757d; font-size: 0.78rem; text-transform: uppercase; font-weight: 600;">Cadastros Incompletos</div>
+        </div>
+
+        <div class="stat-card" style="background: #ffffff; padding: 12px 15px; border-radius: 8px; border-left: 5px solid #dc3545; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div class="stat-value" style="font-size: 1.6rem; font-weight: bold; color: #dc3545;">{{ qtd_excesso or 0 }}</div>
+            <div class="stat-label" style="color: #6c757d; font-size: 0.78rem; text-transform: uppercase; font-weight: 600;">Com Excesso de CH</div>
+        </div>
+    </div>
+
+    <!-- Tabela Estilo Planilha Oficial - Modelo do Diretor (9 Colunas) -->
+    <div class="table-card sheet-table-card" style="background: #ffffff; border-radius: 8px; border: 1px solid #cbd5e1; overflow: hidden;">
+        <!-- Sub-cabeçalho da Tabela com Unidade Escolar e Competência -->
+        <div style="background-color: #0b2545; color: white; display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; font-size: 0.85rem; border-bottom: 2px solid #ffffff;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-weight: 800; opacity: 0.85;">UNIDADE ESCOLAR:</span>
+                <span style="font-weight: 700; text-transform: uppercase; color: #64b5f6;">
+                    {% if escola %}
+                        {{ escola.nome }} (INEP: {{ escola.inep_visual }})
+                    {% else %}
+                        ECIT ESCOLA MODELO - 3ª GRE
+                    {% endif %}
+                </span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="font-weight: 800; opacity: 0.85;">COMPETÊNCIA:</span>
+                <span style="font-weight: 700; text-transform: uppercase; color: #64b5f6;">
+                    {{ competencia or 'AGOSTO/2026' }}
+                </span>
+            </div>
+        </div>
+
+        {% if dados %}
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto; overflow-x: auto;">
+            <table class="sheet-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                <thead>
+                    <tr class="header-main" style="background-color: #0b2545; color: white; text-align: center; border-bottom: 2px solid #cbd5e1;">
+                        <th style="width: 35px; padding: 10px 5px; border: 1px solid #1e3a8a;">Nº</th>
+                        <th style="min-width: 120px; padding: 10px 5px; border: 1px solid #1e3a8a;">MATRÍCULA</th>
+                        <th style="min-width: 220px; padding: 10px 5px; border: 1px solid #1e3a8a;">PROFESSOR(A)</th>
+                        <th style="min-width: 160px; padding: 10px 5px; border: 1px solid #1e3a8a;">VÍNCULO</th>
+                        <th style="min-width: 110px; padding: 10px 5px; border: 1px solid #1e3a8a;">CH TOTAL DECLARADA</th>
+                        <th style="min-width: 320px; padding: 10px 5px; border: 1px solid #1e3a8a;">ATIVIDADES / COMPONENTES E CH INFORMADA</th>
+                        <th style="min-width: 120px; padding: 10px 5px; border: 1px solid #1e3a8a;">CH VÁLIDA REGISTRADA NA ATUAÇÃO</th>
+                        <th style="min-width: 140px; padding: 10px 5px; border: 1px solid #1e3a8a;">SITUAÇÃO DO CADASTRO</th>
+                        <th style="min-width: 220px; padding: 10px 5px; border: 1px solid #1e3a8a;">OBSERVAÇÃO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in dados %}
+                    <tr style="background-color: {{ '#e8f5e9' if loop.index is odd else '#f1f8e9' }}; border-bottom: 1px solid #b0bec5;">
+                        <!-- 1. Nº -->
+                        <td class="text-center" style="border: 1px solid #cfd8dc; font-weight: bold; color: #37474f;">
+                            {{ loop.index }}
+                        </td>
+
+                        <!-- 2. MATRÍCULA -->
+                        <td class="text-center" style="border: 1px solid #cfd8dc; font-weight: 700; color: #1a237e;">
+                            {{ d.professor.matricula or '-' }}
+                        </td>
+
+                        <!-- 3. PROFESSOR(A) -->
+                        <td style="border: 1px solid #cfd8dc; font-weight: 700; text-transform: uppercase; color: #0d47a1;">
+                            {{ d.professor.nome or '-' }}
+                        </td>
+
+                        <!-- 4. VÍNCULO -->
+                        <td style="border: 1px solid #cfd8dc; text-transform: uppercase; color: #263238; font-weight: 600;">
+                            {{ d.professor.vinculo or 'EFETIVO' }}
+                        </td>
+
+                        <!-- 5. CH TOTAL DECLARADA -->
+                        <td class="text-center" style="border: 1px solid #cfd8dc; font-weight: bold; font-size: 0.88rem; color: #004d40;">
+                            {{ d.ch_total_declarada }}
+                        </td>
+
+                        <!-- 6. ATIVIDADES / COMPONENTES E CH INFORMADA -->
+                        <td style="border: 1px solid #cfd8dc; text-transform: uppercase; font-size: 0.76rem; line-height: 1.35; color: #1b5e20;">
+                            {% if d.componentes_lista %}
+                                {% for comp in d.componentes_lista %}
+                                    <div style="margin-bottom: 2px;">• {{ comp }}</div>
+                                {% endfor %}
+                            {% else %}
+                                • COMPONENTE CURRICULAR REGENCIAL
+                            {% endif %}
+                        </td>
+
+                        <!-- 7. CH VÁLIDA REGISTRADA NA ATUAÇÃO -->
+                        <td class="text-center" style="border: 1px solid #cfd8dc; font-weight: 800; font-size: 0.88rem; color: #0d47a1;">
+                            {{ d.ch_alocada }}
+                        </td>
+
+                        <!-- 8. SITUAÇÃO DO CADASTRO -->
+                        <td class="text-center" style="border: 1px solid #cfd8dc;">
+                            {% if d.situacao_cadastro == 'COMPLETO' %}
+                                <span style="color: #1b5e20; font-weight: 800; text-transform: uppercase;">COMPLETO</span>
+                            {% elif d.situacao_cadastro == 'INCOMPLETO' %}
+                                <span style="color: #b71c1c; font-weight: 800; text-transform: uppercase;">INCOMPLETO</span>
+                            {% else %}
+                                <span style="color: #e65100; font-weight: 800; text-transform: uppercase;">{{ d.situacao_cadastro }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- 9. OBSERVAÇÃO -->
+                        <td style="border: 1px solid #cfd8dc; font-weight: 700; color: #1b5e20; text-transform: uppercase; font-size: 0.75rem;">
+                            {{ d.observacao }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty" style="padding: 25px; text-align: center; color: #6c757d; font-size: 0.9rem;">
+            Nenhum professor cadastrado nesta escola. Selecione outra escola ou acesse a aba <strong>4. PROFESSORES</strong>.
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Troca instantânea de escola no Dropdown (idêntico ao professores.html)
+    const seletorEscola = document.getElementById('seletor_escola');
+    if (seletorEscola) {
+        seletorEscola.addEventListener('change', function() {
+            const inepSelecionado = this.value;
+            if (inepSelecionado) {
+                window.location.href = "{{ url_for('quadro_informado.quadro_informado') }}?inep=" + encodeURIComponent(inepSelecionado);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

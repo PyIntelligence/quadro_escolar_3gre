@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}5. ATUAÇÃO - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<div class="sheet-container">
+    <!-- Banner de Cabeçalho estilo Planilha -->
+    <div class="sheet-header-banner">
+        <h2>REGISTRO DE ATUAÇÃO E COMPONENTES CURRICULARES</h2>
+        <p>REGISTRE TODOS OS COMPONENTES CURRICULARES, ATIVIDADES DE REGÊNCIA, COORDENAÇÕES, AMBIENTES PEDAGÓGICOS E DEMAIS FORMAS DE CUMPRIMENTO DA CARGA HORÁRIA NESTA UNIDADE ESCOLAR. A CH SOMENTE SERÁ CONTABILIZADA SE O CAMPO 'CONTABILIZA CH' ESTIVER DEFINIDO COMO 'SIM'.</p>
+    </div>
+
+    {% if not professores %}
+    <div class="alert alert-warning mb-20">
+        Cadastre os professores na aba <a href="{{ url_for('professores.professores') }}"><strong>4. PROFESSORES</strong></a> antes de vincular atuações ou componentes.
+    </div>
+    {% else %}
+    <!-- Formulário de Cadastro -->
+    <form method="POST" class="form-card sheet-form">
+        <input type="hidden" name="action" value="add">
+        
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Professor / Matrícula *</label>
+                <select name="professor_id" required>
+                    <option value="">SELECIONE O PROFESSOR...</option>
+                    {% for p in professores %}
+                    <option value="{{ p.id }}">{{ p.matricula }} - {{ p.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Atividade / Componente Curricular *</label>
+                <select name="componente_curricular" required>
+                    <option value="">SELECIONE...</option>
+                    <option value="APROFUNDAMENTO">APROFUNDAMENTO</option>
+                    <option value="ARTE">ARTE</option>
+                    <option value="BASE TÉCNICA">BASE TÉCNICA</option>
+                    <option value="BIOLOGIA">BIOLOGIA</option>
+                    <option value="CIÊNCIAS">CIÊNCIAS</option>
+                    <option value="CLUBE DE LETRAMENTO">CLUBE DE LETRAMENTO</option>
+                    <option value="EDUCAÇÃO DIGITAL">EDUCAÇÃO DIGITAL</option>
+                    <option value="EDUCAÇÃO FÍSICA">EDUCAÇÃO FÍSICA</option>
+                    <option value="ELETIVA">ELETIVA</option>
+                    <option value="ENSINO RELIGIOSO">ENSINO RELIGIOSO</option>
+                    <option value="FILOSOFIA">FILOSOFIA</option>
+                    <option value="FÍSICA">FÍSICA</option>
+                    <option value="GEOGRAFIA">GEOGRAFIA</option>
+                    <option value="HISTÓRIA">HISTÓRIA</option>
+                    <option value="LÍNGUA ESPANHOLA">LÍNGUA ESPANHOLA</option>
+                    <option value="LÍNGUA INGLESA">LÍNGUA INGLESA</option>
+                    <option value="LÍNGUA PORTUGUESA">LÍNGUA PORTUGUESA</option>
+                    <option value="MATEMÁTICA">MATEMÁTICA</option>
+                    <option value="PRODUÇÃO TEXTUAL">PRODUÇÃO TEXTUAL</option>
+                    <option value="PROJETO DE VIDA">PROJETO DE VIDA</option>
+                    <option value="PRÁTICAS EXPERIMENTAIS">PRÁTICAS EXPERIMENTAIS</option>
+                    <option value="PRÁTICAS INTEGRADORAS I">PRÁTICAS INTEGRADORAS I</option>
+                    <option value="OUTRO">OUTRO - DESCREVER NAS OBSERVAÇÕES</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Tipo de Atividade *</label>
+                <select name="atividade" required>
+                    <option value="REGÊNCIA">REGÊNCIA</option>
+                    <option value="COORDENAÇÃO PEDAGÓGICA">COORDENAÇÃO PEDAGÓGICA</option>
+                    <option value="COORDENAÇÃO DE ÁREA">COORDENAÇÃO DE ÁREA</option>
+                    <option value="SALA DE RECURSOS (AEE)">SALA DE RECURSOS (AEE)</option>
+                    <option value="BIBLIOTECA / AMBIENTE">BIBLIOTECA / AMBIENTE</option>
+                    <option value="READAPTAÇÃO LEGAL">READAPTAÇÃO LEGAL</option>
+                    <option value="OUTRA ATIVIDADE">OUTRA ATIVIDADE</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Turno *</label>
+                <select name="turno" required>
+                    <option value="">SELECIONE...</option>
+                    <option value="MANHÃ">MANHÃ</option>
+                    <option value="TARDE">TARDE</option>
+                    <option value="NOITE">NOITE</option>
+                    <option value="INTEGRAL">INTEGRAL</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Etapa / Modalidade *</label>
+                <select name="etapa_modalidade" required>
+                    <option value="">SELECIONE...</option>
+                    <option value="ENSINO FUNDAMENTAL - ANOS INICIAIS">ENSINO FUNDAMENTAL - ANOS INICIAIS</option>
+                    <option value="ENSINO FUNDAMENTAL - ANOS FINAIS">ENSINO FUNDAMENTAL - ANOS FINAIS</option>
+                    <option value="ENSINO MÉDIO">ENSINO MÉDIO</option>
+                    <option value="EJA">EJA</option>
+                    <option value="SALA AEE">SALA AEE</option>
+                    <option value="EDUCAÇÃO PROFISSIONAL">EDUCAÇÃO PROFISSIONAL</option>
+                    <option value="REGIME DE PROGRESSÃO PARCIAL - RPP">REGIME DE PROGRESSÃO PARCIAL - RPP</option>
+                    <option value="OUTRA">OUTRA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Área do Conhecimento *</label>
+                <select name="area" required>
+                    <option value="">SELECIONE...</option>
+                    <option value="LINGUAGENS">LINGUAGENS</option>
+                    <option value="MATEMÁTICA">MATEMÁTICA</option>
+                    <option value="CIÊNCIAS DA NATUREZA">CIÊNCIAS DA NATUREZA</option>
+                    <option value="CIÊNCIAS HUMANAS E SOCIAIS">CIÊNCIAS HUMANAS E SOCIAIS</option>
+                    <option value="FORMAÇÃO TÉCNICA E PROFISSIONAL">FORMAÇÃO TÉCNICA E PROFISSIONAL</option>
+                    <option value="ANOS INICIAIS">ANOS INICIAIS</option>
+                    <option value="ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE">ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE</option>
+                    <option value="REGIME DE PROGRESSÃO PARCIAL - RPP">REGIME DE PROGRESSÃO PARCIAL - RPP</option>
+                    <option value="LÍNGUA PORTUGUESA">LÍNGUA PORTUGUESA</option>
+                    <option value="OUTRA">OUTRA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Turmas Atendidas</label>
+                <input type="text" name="turmas_atendidas" style="text-transform:uppercase" placeholder="EX: 1º ANO A - REGULAR / 2º ANO B">
+            </div>
+
+            <div class="form-group">
+                <label>Dia(s) de Atuação *</label>
+                <select name="dias_atuacao" required>
+                    <option value="SEGUNDA-FEIRA">SEGUNDA-FEIRA</option>
+                    <option value="TERÇA-FEIRA">TERÇA-FEIRA</option>
+                    <option value="QUARTA-FEIRA">QUARTA-FEIRA</option>
+                    <option value="QUINTA-FEIRA">QUINTA-FEIRA</option>
+                    <option value="SEXTA-FEIRA">SEXTA-FEIRA</option>
+                    <option value="SÁBADO">SÁBADO</option>
+                    <option value="DIVERSOS">DIVERSOS / ESCALA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Carga Horária Semanal (CH) *</label>
+                <input type="number" name="ch_semanal" required value="2" min="1" max="40" step="0.5">
+            </div>
+
+            <div class="form-group">
+                <label>Grupo de Atuação *</label>
+                <select name="grupo_atuacao" required>
+                    <option value="COMPONENTE DA MATRIZ">COMPONENTE DA MATRIZ</option>
+                    <option value="ATIVIDADE COMPLEMENTAR">ATIVIDADE COMPLEMENTAR</option>
+                    <option value="AEE / INCLUSÃO">AEE / INCLUSÃO</option>
+                    <option value="FUNÇÃO DE GESTÃO/COORDENAÇÃO">FUNÇÃO DE GESTÃO/COORDENAÇÃO</option>
+                    <option value="OUTRO GRUPO">OUTRO GRUPO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Natureza da CH *</label>
+                <select name="natureza_ch" required>
+                    <option value="REGÊNCIA">REGÊNCIA</option>
+                    <option value="CARGO/FUNÇÃO">CARGO/FUNÇÃO</option>
+                    <option value="REDUÇÃO LEGAL">REDUÇÃO LEGAL</option>
+                    <option value="OUTRA">OUTRA</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Impacta Matriz Curricular? *</label>
+                <select name="impacta_matriz" required>
+                    <option value="SIM">SIM</option>
+                    <option value="NÃO">NÃO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Compõe Bloco de Regência? *</label>
+                <select name="compoe_bloco_regencia" required>
+                    <option value="SIM">SIM</option>
+                    <option value="NÃO">NÃO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Contabiliza Carga Horária? *</label>
+                <select name="contabiliza_ch" required>
+                    <option value="SIM">SIM</option>
+                    <option value="NÃO">NÃO</option>
+                </select>
+            </div>
+
+            <div class="form-group full">
+                <label>Observações</label>
+                <textarea name="observacoes" rows="2" style="text-transform:uppercase" placeholder="OBSERVAÇÕES COMPLEMENTARES DA ATUAÇÃO"></textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Registrar Atuação</button>
+        </div>
+    </form>
+    {% endif %}
+
+    <!-- Tabela estilo Planilha -->
+    <div class="table-card sheet-table-card">
+        <h3>Atuações Registradas ({{ registros|length }})</h3>
+        {% if registros %}
+        <div class="table-responsive">
+            <table class="sheet-table">
+                <thead>
+                    <tr class="header-main">
+                        <th class="text-center">Nº</th>
+                        <th>MATRÍCULA</th>
+                        <th>NOME DO PROFESSOR</th>
+                        <th>ATIVIDADE / COMPONENTE</th>
+                        <th>TIPO ATIVIDADE</th>
+                        <th>TURNO</th>
+                        <th>ETAPA / MODALIDADE</th>
+                        <th>ÁREA</th>
+                        <th>TURMAS ATENDIDAS</th>
+                        <th>DIAS</th>
+                        <th class="text-center">CH SEMANAL</th>
+                        <th>CONTABILIZA CH?</th>
+                        <th>IMPACTA MATRIZ?</th>
+                        <th>OBSERVAÇÕES</th>
+                        <th class="text-center">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td><strong>{{ r.professor.matricula }}</strong></td>
+                        <td><strong>{{ r.professor.nome }}</strong></td>
+                        <td>{{ r.componente_curricular }}</td>
+                        <td>{{ r.atividade or '-' }}</td>
+                        <td>{{ r.turno or '-' }}</td>
+                        <td>{{ r.etapa_modalidade or '-' }}</td>
+                        <td>{{ r.area or '-' }}</td>
+                        <td>{{ r.turmas_atendidas or '-' }}</td>
+                        <td>{{ r.dias_atuacao or '-' }}</td>
+                        <td class="text-center"><strong>{{ r.ch_semanal }} h</strong></td>
+                        <td class="text-center">
+                            <span class="badge-status {{ 'status-ativo' if r.contabiliza_ch else 'status-outros' }}">
+                                {{ 'SIM' if r.contabiliza_ch else 'NÃO' }}
+                            </span>
+                        </td>
+                        <td class="text-center">{{ 'SIM' if r.impacta_matriz else 'NÃO' }}</td>
+                        <td>{{ r.observacoes or '-' }}</td>
+                        <td class="text-center">
+                            <form method="POST" style="display:inline" onsubmit="return confirm('Remover esta atuação?')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="{{ r.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">Nenhuma atuação cadastrada.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

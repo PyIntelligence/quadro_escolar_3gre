@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block title %}4. ATUAÇÃO E DISTRIBUIÇÃO - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<div class="sheet-container full-width-sheet">
+    <!-- Banner de Cabeçalho estilo NUTCI -->
+    <div class="sheet-header-banner" style="background: linear-gradient(135deg, #0b2545, #134074); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.5rem; text-transform: uppercase;">DISTRIBUIÇÃO DA CARGA HORÁRIA E FORMAS DE ATUAÇÃO</h2>
+                <p style="margin: 5px 0 0 0; font-size: 0.85rem; opacity: 0.9;">
+                    REGISTRE TODAS AS FORMAS DE CUMPRIMENTO DA CARGA HORÁRIA NESTA UNIDADE: COMPONENTES CURRICULARES, FUNÇÕES, COORDENAÇÕES, AMBIENTES PEDAGÓGICOS E ATIVIDADES EXTRACLASSE.
+                </p>
+            </div>
+            {% if escola %}
+            <div style="text-align: right; background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 6px;">
+                <strong style="display: block;">{{ escola.unidade_escolar or escola.nome }}</strong>
+                <small>INEP: {{ escola.codigo_inep or escola.inep_visual }}</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Sanfona para Adicionar Nova Atribuição -->
+    <details class="collapsible-card" style="margin-bottom: 20px;">
+        <summary class="collapsible-summary">
+            <span>➕ Adicionar Atribuição de Carga Horária / Atuação</span>
+            <span class="toggle-icon">▼</span>
+        </summary>
+        <div class="form-card sheet-form" style="padding: 15px; border-top: 2px solid #0056b3;">
+            <form method="POST" action="{{ url_for('atuacao.atuacao', inep=inep) }}">
+                <input type="hidden" name="action" value="add">
+                
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label>Matrícula / Professor *</label>
+                        <select name="matricula" id="seletor_prof_novo" required onchange="autopreencherProf(this)">
+                            <option value="">SELECIONE O PROFESSOR...</option>
+                            {% for p in professores_lista %}
+                                <option value="{{ p.matricula }}" data-nome="{{ p.nome }}" data-ch="{{ p.carga_horaria or 40 }}">
+                                    {{ p.matricula }} - {{ p.nome }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <input type="hidden" name="professor_nome" id="prof_nome_hidden">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Atividade / Componente *</label>
+                        <input type="text" name="atividade_componente" required placeholder="EX: BIOLOGIA, ARTE, RDD/140" style="text-transform: uppercase;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Turno</label>
+                        <select name="turno">
+                            <option value="INTEGRAL">INTEGRAL</option>
+                            <option value="MANHÃ">MANHÃ</option>
+                            <option value="TARDE">TARDE</option>
+                            <option value="NOITE">NOITE</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Etapa / Modalidade</label>
+                        <select name="etapa_modalidade">
+                            <option value="ENSINO MÉDIO">ENSINO MÉDIO</option>
+                            <option value="EDUCAÇÃO PROFISSIONAL">EDUCAÇÃO PROFISSIONAL</option>
+                            <option value="ENSINO FUNDAMENTAL">ENSINO FUNDAMENTAL</option>
+                            <option value="EJA">EJA</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Área de Conhecimento</label>
+                        <select name="area">
+                            <option value="LINGUAGENS">LINGUAGENS</option>
+                            <option value="MATEMÁTICA">MATEMÁTICA</option>
+                            <option value="CIÊNCIAS DA NATUREZA">CIÊNCIAS DA NATUREZA</option>
+                            <option value="CIÊNCIAS HUMANAS">CIÊNCIAS HUMANAS</option>
+                            <option value="FORMAÇÃO TÉCNICA E PROFISSIONAL">FORMAÇÃO TÉCNICA E PROFISSIONAL</option>
+                            <option value="OUTRA">OUTRA</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>CH Semanal (Horas)</label>
+                        <input type="number" name="ch_semanal" value="13" min="1" max="40" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Turmas Atendidas</label>
+                        <select name="turmas_atendidas">
+                            <option value="">SELECIONE OU DIGITE...</option>
+                            {% for t in turmas_lista %}
+                                <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dia(s) de Atuação</label>
+                        <select name="dias_atuacao">
+                            <option value="SEGUNDA-FEIRA">SEGUNDA-FEIRA</option>
+                            <option value="TERÇA-FEIRA">TERÇA-FEIRA</option>
+                            <option value="QUARTA-FEIRA">QUARTA-FEIRA</option>
+                            <option value="QUINTA-FEIRA">QUINTA-FEIRA</option>
+                            <option value="SEXTA-FEIRA">SEXTA-FEIRA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 15px;">
+                    <button type="submit" class="btn btn-success">+ Salvar Nova Atribuição</button>
+                </div>
+            </form>
+        </div>
+    </details>
+
+    <!-- Planilha Geral com as 24 Colunas do Modelo Oficial -->
+    <div class="table-card sheet-table-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 1.1rem; color: #0b2545;">Quadro Mestre de Atuação ({{ atuacoes|length }} Registros)</h3>
+            <span id="save-status" style="font-size: 0.85rem; font-weight: bold; color: #198754; display: none;">✔ Sincronizado com PostgreSQL</span>
+        </div>
+
+        <div class="table-responsive" style="max-height: 680px; overflow-y: auto; overflow-x: auto;">
+            <table class="sheet-table" style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+                <thead>
+                    <!-- Cabecalho Nivel 1 -->
+                    <tr style="background-color: #0b2545; color: white; text-align: center;">
+                        <th colspan="3">IDENTIFICAÇÃO DO DOCENTE</th>
+                        <th colspan="6">DISTRIBUIÇÃO DA CARGA HORÁRIA E TURMAS</th>
+                        <th colspan="7">ACOMPANHAMENTO E ENQUADRAMENTO NORMATIVO</th>
+                        <th colspan="3">REGRAS DA MATRIZ</th>
+                        <th colspan="5">BALANÇO DA CARGA HORÁRIA (CH)</th>
+                        <th rowspan="2">AÇÃO</th>
+                    </tr>
+                    <!-- Cabecalho Nivel 2 (As 24 Colunas) -->
+                    <tr style="background-color: #134074; color: white; text-align: center;">
+                        <th style="width: 30px;">Nº</th>
+                        <th style="min-width: 110px;">MATRÍCULA</th>
+                        <th style="min-width: 180px;">PROFESSOR(A)</th>
+                        <th style="min-width: 190px;">ATIVIDADE / COMPONENTE</th>
+                        <th style="min-width: 100px;">TURNO</th>
+                        <th style="min-width: 140px;">ETAPA/MODALIDADE</th>
+                        <th style="min-width: 140px;">ÁREA</th>
+                        <th style="min-width: 80px;">CH SEMANAL</th>
+                        <th style="min-width: 180px;">TURMAS ATENDIDAS</th>
+                        <th style="min-width: 130px;">DIA(S) DE ATUAÇÃO</th>
+                        <th style="min-width: 120px;">SIT. PREENCH.</th>
+                        <th style="min-width: 120px;">SIT. NORMATIVA</th>
+                        <th style="min-width: 150px;">GRUPO ATUAÇÃO</th>
+                        <th style="min-width: 150px;">NATUREZA CH</th>
+                        <th style="min-width: 80px;">IMPACTA MATRIZ?</th>
+                        <th style="min-width: 80px;">BLOCO REGÊNCIA?</th>
+                        <th style="min-width: 180px;">LIMITE / REGRA</th>
+                        <th style="min-width: 180px;">BASE NORMATIVA</th>
+                        <th style="min-width: 180px;">VALIDAÇÃO / CONDIÇÃO</th>
+                        <th style="min-width: 160px;">OBSERVAÇÕES</th>
+                        <th style="min-width: 70px;">CH AUT.</th>
+                        <th style="min-width: 70px;">CH REG.</th>
+                        <th style="min-width: 70px;">CH REST.</th>
+                        <th style="min-width: 120px;">SITUAÇÃO CH</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in atuacoes %}
+                    <tr data-id="{{ r.id }}" style="border-bottom: 1px solid #cbd5e1;">
+                        <td class="text-center" style="background-color: #f8fafc;"><strong>{{ loop.index }}</strong></td>
+                        
+                        <!-- Matrícula -->
+                        <td>
+                            <input type="text" name="matricula" value="{{ r.matricula or '' }}" class="form-sheet inline-autosave" style="font-weight: bold;">
+                        </td>
+
+                        <!-- Nome Professor -->
+                        <td>
+                            <input type="text" name="professor_nome" value="{{ r.professor_nome or '' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Atividade / Componente -->
+                        <td>
+                            <input type="text" name="atividade_componente" value="{{ r.atividade_componente or '' }}" class="form-sheet inline-autosave" style="font-weight: 600;">
+                        </td>
+
+                        <!-- Turno -->
+                        <td>
+                            <select name="turno" class="form-sheet inline-autosave">
+                                {% for t in ['INTEGRAL', 'MANHÃ', 'TARDE', 'NOITE'] %}
+                                    <option value="{{ t }}" {% if r.turno == t %}selected{% endif %}>{{ t }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <!-- Etapa / Modalidade -->
+                        <td>
+                            <input type="text" name="etapa_modalidade" value="{{ r.etapa_modalidade or 'ENSINO MÉDIO' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Área -->
+                        <td>
+                            <input type="text" name="area" value="{{ r.area or '' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- CH Semanal -->
+                        <td>
+                            <input type="number" name="ch_semanal" value="{{ r.ch_semanal or 0 }}" class="form-sheet inline-autosave text-center" style="font-weight: bold;">
+                        </td>
+
+                        <!-- Turmas Atendidas -->
+                        <td>
+                            <input type="text" name="turmas_atendidas" value="{{ r.turmas_atendidas or '' }}" class="form-sheet inline-autosave" placeholder="EX: 1º ANO A">
+                        </td>
+
+                        <!-- Dias de Atuação -->
+                        <td>
+                            <input type="text" name="dias_atuacao" value="{{ r.dias_atuacao or '' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Situação Preenchimento -->
+                        <td class="text-center">
+                            <span class="badge badge-completo">{{ r.situacao_preenchimento or 'COMPLETO' }}</span>
+                        </td>
+
+                        <!-- Situação Normativa -->
+                        <td class="text-center">
+                            <span class="badge badge-conforme">{{ r.situacao_normativa or 'CONFORME' }}</span>
+                        </td>
+
+                        <!-- Grupo Atuação -->
+                        <td>
+                            <input type="text" name="grupo_atuacao" value="{{ r.grupo_atuacao or 'COMPONENTE CURRICULAR' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Natureza CH -->
+                        <td>
+                            <input type="text" name="natureza_ch" value="{{ r.natureza_ch or 'INTERAÇÃO PEDAGÓGICA' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Impacta Matriz -->
+                        <td>
+                            <select name="impacta_matriz" class="form-sheet inline-autosave text-center">
+                                <option value="SIM" {% if r.impacta_matriz == 'SIM' %}selected{% endif %}>SIM</option>
+                                <option value="NÃO" {% if r.impacta_matriz == 'NÃO' %}selected{% endif %}>NÃO</option>
+                            </select>
+                        </td>
+
+                        <!-- Blocos Regência -->
+                        <td>
+                            <select name="compoe_bloco_regencia" class="form-sheet inline-autosave text-center">
+                                <option value="SIM" {% if r.compoe_bloco_regencia == 'SIM' %}selected{% endif %}>SIM</option>
+                                <option value="NÃO" {% if r.compoe_bloco_regencia == 'NÃO' %}selected{% endif %}>NÃO</option>
+                            </select>
+                        </td>
+
+                        <!-- Limite / Regra -->
+                        <td>
+                            <input type="text" name="limite_regra" value="{{ r.limite_regra or 'CONFORME MATRIZ CURRICULAR HOMOLOGADA' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Base Normativa -->
+                        <td>
+                            <input type="text" name="base_normativa" value="{{ r.base_normativa or 'PORTARIA Nº 028/2026/SEE-PB' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Validação -->
+                        <td>
+                            <input type="text" name="validacao_condicao" value="{{ r.validacao_condicao or 'HABILITAÇÃO / PERFIL' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- Observações -->
+                        <td>
+                            <input type="text" name="observacoes" value="{{ r.observacoes or '' }}" class="form-sheet inline-autosave">
+                        </td>
+
+                        <!-- CH Autorizada -->
+                        <td class="text-center"><strong>{{ r.ch_autorizada or 40 }}</strong></td>
+
+                        <!-- CH Registrada (Calculada) -->
+                        <td class="text-center" style="background-color: #e2e8f0; font-weight: bold;">
+                            {{ r.ch_registrada_calc }}
+                        </td>
+
+                        <!-- CH Restante (Calculada) -->
+                        <td class="text-center" style="background-color: #f1f5f9; font-weight: bold; color: {% if r.ch_restante_calc < 0 %}red{% else %}green{% endif %};">
+                            {{ r.ch_restante_calc }}
+                        </td>
+
+                        <!-- Situação CH -->
+                        <td class="text-center">
+                            {% if r.situacao_ch_calc == 'CH COMPLETA' %}
+                                <span class="badge badge-completo">CH COMPLETA</span>
+                            {% elif r.situacao_ch_calc == 'CH INCOMPLETA' %}
+                                <span class="badge badge-alerta">CH INCOMPLETA</span>
+                            {% else %}
+                                <span class="badge badge-erro">CH EXCEDIDA</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Ação Remover -->
+                        <td class="text-center">
+                            <form method="POST" action="{{ url_for('atuacao.atuacao', inep=inep) }}" onsubmit="return confirm('Excluir esta linha de atuação?')">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="{{ r.id }}">
+                                <button type="submit" class="btn-del" title="Excluir">✕</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function autopreencherProf(selectElem) {
+    const opt = selectElem.options[selectElem.selectedIndex];
+    if (opt && opt.dataset.nome) {
+        document.getElementById('prof_nome_hidden').value = opt.dataset.nome;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const statusBox = document.getElementById('save-status');
+
+    document.querySelectorAll('.inline-autosave').forEach(function(elem) {
+        elem.addEventListener('change', function() {
+            const tr = this.closest('tr');
+            const regId = tr.getAttribute('data-id');
+            const fieldName = this.getAttribute('name');
+            const fieldValue = this.value;
+
+            if (!regId || !fieldName) return;
+
+            fetch('{{ url_for("atuacao.autosave_atuacao") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: regId,
+                    campo: fieldName,
+                    valor: fieldValue
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    statusBox.style.display = 'inline';
+                    setTimeout(() => { statusBox.style.display = 'none'; }, 2000);
+                }
+            })
+            .catch(err => console.error('Erro no autosave:', err));
+        });
+    });
+});
+</script>
+
+<style>
+.full-width-sheet {
+    width: 100%;
+    max-width: 100%;
+    padding: 10px;
+}
+.form-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+.form-sheet {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 0.78rem;
+    background: transparent;
+}
+.form-sheet:focus {
+    background: #ffffff;
+    border-color: #0056b3;
+    outline: none;
+}
+.badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    display: inline-block;
+}
+.badge-completo { background-color: #d1e7dd; color: #0f5132; }
+.badge-conforme { background-color: #cfe2ff; color: #084298; }
+.badge-alerta { background-color: #fff3cd; color: #664d03; }
+.badge-erro { background-color: #f8d7da; color: #842029; }
+.btn-del {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+.btn-del:hover { background: #bb2d3b; }
+</style>
+{% endblock %}

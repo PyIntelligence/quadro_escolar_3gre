@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+{% block title %}1. ESCOLA - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<style>
+/* Animação e Badges de Auto-salvamento */
+.spin {
+    animation: spin-animation 1s linear infinite;
+    display: inline-block;
+}
+@keyframes spin-animation {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.status-save-badge {
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 8px;
+    transition: opacity 0.3s ease;
+}
+.status-save-badge.salvando { color: #0d6efd; }
+.status-save-badge.salvo { color: #198754; }
+.status-save-badge.erro { color: #dc3545; }
+.field-salvando { border-color: #0d6efd !important; }
+.field-salvo { border-color: #198754 !important; }
+</style>
+
+{% set e = escola if escola else registro %}
+
+<form method="POST" action="{{ url_for('escolas.escola') }}" id="form_dados_escola" class="form-tabela-container">
+
+    <!-- SEÇÃO 1: IDENTIFICAÇÃO DA UNIDADE ESCOLAR -->
+    <table class="tabela-form">
+        <thead>
+            <tr>
+                <th colspan="2" class="th-principal">IDENTIFICAÇÃO DA UNIDADE ESCOLAR</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="td-label">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span title="Unidade escolar atualmente em edição">ESCOLA</span>
+                        
+                        <!-- BOTÕES COMPACTOS DE AÇÃO -->
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            <!-- Botão 1: Salvar Formulário -->
+                            <button type="submit" class="btn btn-sm btn-light" title="Salvar formulário" style="border: 1px solid #0056b3; color: #0056b3; padding: 2px 6px; border-radius: 4px; line-height: 1.2;">
+                                💾
+                            </button>
+
+                            <!-- Botão 2: Engrenagem SIAGE -->
+                            <a href="{{ url_for('escolas.sincronizar_siage') if 'escolas.sincronizar_siage' in url_for.__globals__ else '/sincronizar_siage' }}" class="btn btn-sm btn-light" title="Central de Sincronização e Importação do SIAGE" style="border: 1px solid #0056b3; color: #0056b3; padding: 2px 6px; border-radius: 4px; line-height: 1.2; text-decoration: none;">
+                                ⚙️
+                            </a>
+
+                            <!-- Botão 3: Voltar ao Início -->
+                            <a href="{{ url_for('escolas.index') }}" class="btn btn-sm btn-light" title="Voltar ao Painel Principal" style="border: 1px solid #0056b3; color: #0056b3; padding: 2px 6px; border-radius: 4px; line-height: 1.2; text-decoration: none;">
+                                🏠
+                            </a>
+                        </div>
+                    </div>
+                </td>
+                <td class="td-field field-yellow">
+                    <select class="form-select" id="codigo_inep_seletor" name="codigo_inep_seletor" onchange="solicitarSenhaEscola(this)" title="Selecione a Unidade Escolar" style="width: 100%; padding: 8px; font-size: 1rem; border-radius: 4px; border: 1px solid #0056b3; font-weight: bold;">
+                        {% if not todas_escolas %}
+                            <option value="">Nenhuma escola carregada.</option>
+                        {% endif %}
+                        {% for esc in todas_escolas %}
+                            {% set inep_item = esc.codigo_inep if esc.codigo_inep else esc.id %}
+                            {% set nome_item = esc.unidade_escolar if esc.unidade_escolar else esc.nome %}
+                            <option value="{{ inep_item }}" data-inep="{{ inep_item }}" data-nome="{{ nome_item }}" {% if inep_item|string == inep_selecionado|string %}selected{% endif %}>
+                                {{ nome_item }} - (INEP: {{ inep_item }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">MUNICÍPIO</td>
+                <td class="td-field field-blue">
+                    <input type="text" name="municipio" class="autosave-field" value="{{ e.municipio if e and e.municipio and e.municipio != 'NONE' else '' }}" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">CÓDIGO INEP</td>
+                <td class="td-field field-blue">
+                    <input type="text" name="codigo_inep" class="autosave-field" value="{{ e.codigo_inep if e and e.codigo_inep and e.codigo_inep != 'NONE' else inep_selecionado }}" readonly>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">MODALIDADE</td>
+                <td class="td-field field-blue">
+                    <input type="text" name="modalidade" class="autosave-field" value="{{ e.modalidade if e and e.modalidade and e.modalidade != 'NONE' else '' }}" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">ENDEREÇO DA UNIDADE</td>
+                <td class="td-field">
+                    <input type="text" name="endereco" class="autosave-field" value="{{ e.endereco if e and e.endereco and e.endereco != 'NONE' else '' }}" style="text-transform:uppercase" placeholder="RUA, Nº, BAIRRO">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">ZONA / LOCALIZAÇÃO</td>
+                <td class="td-field field-blue">
+                    <input type="text" name="zona" class="autosave-field" value="{{ e.zona if e and e.zona and e.zona != 'NONE' else '' }}" style="text-transform:uppercase" placeholder="URBANA / RURAL">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">E-MAIL INSTITUCIONAL</td>
+                <td class="td-field">
+                    <input type="email" name="email" class="autosave-field" value="{{ e.email if e and e.email and e.email != 'NONE' else '' }}" style="text-transform:lowercase" placeholder="escola@educacao.pb.gov.br">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">TELEFONE DA UNIDADE ESCOLAR</td>
+                <td class="td-field text-center">
+                    <input type="text" name="telefone" class="autosave-field" value="{{ e.telefone if e and e.telefone and e.telefone != 'NONE' else '' }}" placeholder="(83) 90000-0000">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">GESTOR(A)</td>
+                <td class="td-field">
+                    <input type="text" name="gestor" class="autosave-field" value="{{ e.gestor if e and e.gestor and e.gestor != 'NONE' else '' }}" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">RESPONSÁVEL PELO PREENCHIMENTO</td>
+                <td class="td-field">
+                    <input type="text" name="responsavel_preenchimento" class="autosave-field" value="{{ e.responsavel_preenchimento if e and e.responsavel_preenchimento and e.responsavel_preenchimento != 'NONE' else '' }}" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">CARGO/FUNÇÃO DO RESPONSÁVEL</td>
+                <td class="td-field">
+                    <input type="text" name="cargo_funcao" class="autosave-field" value="{{ e.cargo_funcao if e and e.cargo_funcao and e.cargo_funcao != 'NONE' else '' }}" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">QUANTIDADE DE PROFESSORES CADASTRADOS EM EXERCÍCIO</td>
+                <td class="td-field text-center">
+                    <input type="number" name="qtd_professores" value="{{ e.qtd_professores if e and e.qtd_professores else 0 }}" readonly class="input-readonly">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">COMPETÊNCIA DE REFERÊNCIA</td>
+                <td class="td-field text-center">
+                    <input type="text" name="competencia" class="autosave-field" value="{{ e.competencia if e and e.competencia and e.competencia != 'NONE' else 'AGOSTO/2026' }}" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">CONFIRMAÇÃO DO RESPONSÁVEL</td>
+                <td class="td-field field-yellow">
+                    <select name="confirmacao_responsavel" class="autosave-field">
+                        <option value="CONFIRMO AS INFORMAÇÕES" {% if e and e.confirmacao_responsavel == 'CONFIRMO AS INFORMAÇÕES' %}selected{% endif %}>CONFIRMO AS INFORMAÇÕES</option>
+                        <option value="NÃO CONFIRMO" {% if e and e.confirmacao_responsavel == 'NÃO CONFIRMO' %}selected{% endif %}>NÃO CONFIRMO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">ÚLTIMA ATUALIZAÇÃO</td>
+                <td class="td-field field-blue text-center">
+                    <span id="label-ultima-atualizacao" class="data-atualizacao">
+                        {% if e and e.ultima_atualizacao %}
+                            {{ e.ultima_atualizacao.strftime('%d/%m/%Y %H:%M:%S') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="box-declaracao">
+        DECLARAÇÃO DE RESPONSABILIDADE: AO SELECIONAR "CONFIRMO AS INFORMAÇÕES", O RESPONSÁVEL DECLARA QUE OS DADOS CORRESPONDEM AOS PROFISSIONAIS EFETIVAMENTE EM EXERCÍCIO NA UNIDADE, NA COMPETÊNCIA INDICADA. O LEVANTAMENTO TEM FINALIDADE ADMINISTRATIVA E INFORMATIVA, NÃO ALTERA AUTOMATICAMENTE LOTAÇÃO, UTB OU REGISTROS OFICIAIS DA SEE/PB E ESTÁ SUJEITO À CONFERÊNCIA DA 3ª GRE. NOMES E MATRÍCULAS SÃO DE USO INSTITUCIONAL E NÃO DEVEM SER COMPARTILHADOS PUBLICAMENTE.
+    </div>
+
+    <!-- SEÇÃO 2: GESTÃO E ORGANIZAÇÃO DA UNIDADE ESCOLAR -->
+    <table class="tabela-form mt-20">
+        <thead>
+            <tr>
+                <th colspan="2" class="th-principal">GESTÃO E ORGANIZAÇÃO DA UNIDADE ESCOLAR</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="td-label">LÍDERES DE TURMA CONSTITUÍDOS?</td>
+                <td class="td-field">
+                    <select name="lideres_turma" class="select-status autosave-field">
+                        <option value="SIM" {% if e and e.lideres_turma == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.lideres_turma == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">RECONHECIMENTO VIGENTE NO CONSELHO ESTADUAL?</td>
+                <td class="td-field">
+                    <select name="reconhecimento_conselho" class="select-status autosave-field">
+                        <option value="SIM" {% if e and e.reconhecimento_conselho == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.reconhecimento_conselho == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">GRÊMIO ESTUDANTIL INSTITUÍDO?</td>
+                <td class="td-field">
+                    <select name="gremio_estudantil" class="select-status autosave-field">
+                        <option value="SIM" {% if e and e.gremio_estudantil == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.gremio_estudantil == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">OFERTA EJA?</td>
+                <td class="td-field">
+                    <select name="oferta_eja" class="select-status autosave-field">
+                        <option value="SIM" {% if e and e.oferta_eja == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.oferta_eja == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">TURNOS DE FUNCIONAMENTO</td>
+                <td class="td-field field-yellow">
+                    <select name="turnos_funcionamento" class="autosave-field">
+                        <option value="INTEGRAL" {% if e and e.turnos_funcionamento == 'INTEGRAL' %}selected{% endif %}>INTEGRAL</option>
+                        <option value="MANHÃ/TARDE" {% if e and e.turnos_funcionamento == 'MANHÃ/TARDE' %}selected{% endif %}>MANHÃ/TARDE</option>
+                        <option value="MANHÃ/TARDE/NOITE" {% if e and e.turnos_funcionamento == 'MANHÃ/TARDE/NOITE' %}selected{% endif %}>MANHÃ/TARDE/NOITE</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">CONSELHO ESCOLAR ATIVO?</td>
+                <td class="td-field">
+                    <select name="conselho_escolar_ativo" class="select-status autosave-field">
+                        <option value="SIM" {% if e and e.conselho_escolar_ativo == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.conselho_escolar_ativo == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">MANDATO DO CONSELHO ESCOLAR VIGENTE?</td>
+                <td class="td-field">
+                    <select name="mandato_conselho_vigente" class="select-status autosave-field">
+                        <option value="SIM" {% if e and e.mandato_conselho_vigente == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.mandato_conselho_vigente == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">SEGURANÇA ARMADA NA UNIDADE?</td>
+                <td class="td-field">
+                    <select name="seguranca_armada" class="select-status status-alert autosave-field">
+                        <option value="NÃO" {% if e and e.seguranca_armada == 'NÃO' %}selected{% endif %}>NÃO</option>
+                        <option value="SIM" {% if e and e.seguranca_armada == 'SIM' %}selected{% endif %}>SIM</option>
+                    </select>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- SEÇÃO 3: SECRETARIA ESCOLAR -->
+    <table class="tabela-form mt-20">
+        <thead>
+            <tr>
+                <th colspan="2" class="th-secao">SECRETARIA ESCOLAR</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="td-label">SITUAÇÃO DO(A) SECRETÁRIO(A) ESCOLAR</td>
+                <td class="td-field field-yellow">
+                    <select name="situacao_secretario" class="autosave-field">
+                        <option value="SIM" {% if e and e.situacao_secretario == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.situacao_secretario == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">NOME COMPLETO DO(A) SECRETÁRIO(A)</td>
+                <td class="td-field"><input type="text" name="nome_secretario" class="autosave-field" value="{{ e.nome_secretario if e and e.nome_secretario and e.nome_secretario != 'NONE' else '' }}" style="text-transform:uppercase"></td>
+            </tr>
+            <tr>
+                <td class="td-label">MATRÍCULA DO(A) SECRETÁRIO(A)</td>
+                <td class="td-field text-center"><input type="text" name="matricula_secretario" class="autosave-field" value="{{ e.matricula_secretario if e and e.matricula_secretario and e.matricula_secretario != 'NONE' else '' }}" placeholder="000.000-0"></td>
+            </tr>
+            <tr>
+                <td class="td-label">TELEFONE DO(A) SECRETÁRIO(A)</td>
+                <td class="td-field text-center"><input type="text" name="telefone_secretario" class="autosave-field" value="{{ e.telefone_secretario if e and e.telefone_secretario and e.telefone_secretario != 'NONE' else '' }}" placeholder="(83) 99000-0000"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- SEÇÃO 4: COORDENAÇÃO PEDAGÓGICA -->
+    <table class="tabela-form mt-20">
+        <thead>
+            <tr>
+                <th colspan="2" class="th-secao">COORDENAÇÃO PEDAGÓGICA</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="td-label">SITUAÇÃO/QUANTIDADE DE COORDENADORES PEDAGÓGICOS</td>
+                <td class="td-field field-yellow">
+                    <input type="number" name="qtd_coord_pedagogico" class="autosave-field" value="{{ e.qtd_coord_pedagogico if e and e.qtd_coord_pedagogico else 1 }}">
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">NOME DO(A) COORDENADOR(A) PEDAGÓGICO(A) 1</td>
+                <td class="td-field"><input type="text" name="coord_ped_1_nome" class="autosave-field" value="{{ e.coord_ped_1_nome if e and e.coord_ped_1_nome and e.coord_ped_1_nome != 'NONE' else '' }}" style="text-transform:uppercase"></td>
+            </tr>
+            <tr>
+                <td class="td-label">MATRÍCULA DO(A) COORDENADOR(A) 1</td>
+                <td class="td-field text-center"><input type="text" name="coord_ped_1_mat" class="autosave-field" value="{{ e.coord_ped_1_mat if e and e.coord_ped_1_mat and e.coord_ped_1_mat != 'NONE' else '' }}" placeholder="000.000-0"></td>
+            </tr>
+            <tr>
+                <td class="td-label">TELEFONE DO(A) COORDENADOR(A) 1</td>
+                <td class="td-field text-center"><input type="text" name="coord_ped_1_tel" class="autosave-field" value="{{ e.coord_ped_1_tel if e and e.coord_ped_1_tel and e.coord_ped_1_tel != 'NONE' else '' }}" placeholder="(83) 99000-0000"></td>
+            </tr>
+            <tr>
+                <td class="td-label">NOME DO(A) COORDENADOR(A) PEDAGÓGICO(A) 2</td>
+                <td class="td-field"><input type="text" name="coord_ped_2_nome" class="autosave-field" value="{{ e.coord_ped_2_nome if e and e.coord_ped_2_nome and e.coord_ped_2_nome != 'NONE' else '' }}" style="text-transform:uppercase"></td>
+            </tr>
+            <tr>
+                <td class="td-label">MATRÍCULA DO(A) COORDENADOR(A) 2</td>
+                <td class="td-field text-center"><input type="text" name="coord_ped_2_mat" class="autosave-field" value="{{ e.coord_ped_2_mat if e and e.coord_ped_2_mat and e.coord_ped_2_mat != 'NONE' else '' }}" placeholder="000.000-0"></td>
+            </tr>
+            <tr>
+                <td class="td-label">TELEFONE DO(A) COORDENADOR(A) 2</td>
+                <td class="td-field text-center"><input type="text" name="coord_ped_2_tel" class="autosave-field" value="{{ e.coord_ped_2_tel if e and e.coord_ped_2_tel and e.coord_ped_2_tel != 'NONE' else '' }}" placeholder="(83) 99000-0000"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- SEÇÃO 5: CAF -->
+    <table class="tabela-form mt-20">
+        <thead>
+            <tr>
+                <th colspan="2" class="th-secao">COORDENAÇÃO ADMINISTRATIVO-FINANCEIRA - CAF/ASSESSOR FINANCEIRO</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="td-label">SITUAÇÃO DO CAF/ASSESSOR</td>
+                <td class="td-field field-yellow">
+                    <select name="situacao_caf" class="autosave-field">
+                        <option value="SIM" {% if e and e.situacao_caf == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.situacao_caf == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">NOME COMPLETO DO(A) CAF/ASSESSOR</td>
+                <td class="td-field"><input type="text" name="nome_caf" class="autosave-field" value="{{ e.nome_caf if e and e.nome_caf and e.nome_caf != 'NONE' else '' }}" style="text-transform:uppercase"></td>
+            </tr>
+            <tr>
+                <td class="td-label">MATRÍCULA DO(A) CAF/ASSESSOR</td>
+                <td class="td-field text-center"><input type="text" name="matricula_caf" class="autosave-field" value="{{ e.matricula_caf if e and e.matricula_caf and e.matricula_caf != 'NONE' else '' }}" placeholder="000.000-0"></td>
+            </tr>
+            <tr>
+                <td class="td-label">TELEFONE DO(A) CAF/ASSESSOR</td>
+                <td class="td-field text-center"><input type="text" name="telefone_caf" class="autosave-field" value="{{ e.telefone_caf if e and e.telefone_caf and e.telefone_caf != 'NONE' else '' }}" placeholder="(83) 99000-0000"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- SEÇÃO 6: RPP -->
+    <table class="tabela-form mt-20">
+        <thead>
+            <tr>
+                <th colspan="2" class="th-secao">COORDENAÇÃO REGIME DE PROGRESSÃO PARCIAL - RPP</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="td-label">SITUAÇÃO DO COORDENADOR</td>
+                <td class="td-field field-yellow">
+                    <select name="situacao_rpp" class="autosave-field">
+                        <option value="SIM" {% if e and e.situacao_rpp == 'SIM' %}selected{% endif %}>SIM</option>
+                        <option value="NÃO" {% if e and e.situacao_rpp == 'NÃO' %}selected{% endif %}>NÃO</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td class="td-label">NOME COMPLETO DO(A) COORDENADOR</td>
+                <td class="td-field"><input type="text" name="nome_rpp" class="autosave-field" value="{{ e.nome_rpp if e and e.nome_rpp and e.nome_rpp != 'NONE' else '' }}" style="text-transform:uppercase"></td>
+            </tr>
+            <tr>
+                <td class="td-label">MATRÍCULA DO(A) COORDENADOR</td>
+                <td class="td-field text-center"><input type="text" name="matricula_rpp" class="autosave-field" value="{{ e.matricula_rpp if e and e.matricula_rpp and e.matricula_rpp != 'NONE' else '' }}" placeholder="000.000-0"></td>
+            </tr>
+            <tr>
+                <td class="td-label">TELEFONE DO(A) COORDENADOR</td>
+                <td class="td-field text-center"><input type="text" name="telefone_rpp" class="autosave-field" value="{{ e.telefone_rpp if e and e.telefone_rpp and e.telefone_rpp != 'NONE' else '' }}" placeholder="(83) 99000-0000"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="rodape-alerta">
+        PREENCHA SOMENTE OS CAMPOS APLICÁVEIS À REALIDADE ATUAL DA UNIDADE. NOMES EM LETRAS MAIÚSCULAS. MATRÍCULA: 000.000-0. TELEFONE: (00) 00000-0000.
+    </div>
+
+    <div class="form-actions mt-20">
+        <button type="submit" class="btn btn-primary">Salvar Dados da Escola</button>
+        <a href="{{ url_for('escolas.index') }}" class="btn btn-secondary">Voltar ao Início</a>
+    </div>
+</form>
+
+<!-- SCRIPT DE SALVAMENTO AUTOMÁTICO EM TEMPO REAL -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const fields = document.querySelectorAll('.autosave-field');
+    const timers = {};
+
+    fields.forEach(field => {
+        const badge = document.createElement('span');
+        badge.className = 'status-save-badge';
+        badge.id = `badge-${field.name}`;
+        
+        if (field.nextSibling) {
+            field.parentNode.insertBefore(badge, field.nextSibling);
+        } else {
+            field.parentNode.appendChild(badge);
+        }
+
+        const eventType = field.tagName.toLowerCase() === 'select' ? 'change' : 'input';
+
+        field.addEventListener(eventType, (e) => {
+            const inputName = e.target.name;
+
+            field.classList.remove('field-salvo');
+            field.classList.add('field-salvando');
+            badge.className = 'status-save-badge salvando';
+            badge.innerHTML = '<i class="spin">↻</i> Salvando...';
+            badge.style.opacity = '1';
+
+            clearTimeout(timers[inputName]);
+
+            timers[inputName] = setTimeout(() => {
+                salvarCampo(inputName, e.target.value, field, badge);
+            }, 400);
+        });
+    });
+
+    function salvarCampo(nomeCampo, valorCampo, field, badge) {
+        const selectElem = document.getElementById('codigo_inep_seletor');
+        const codigoInep = selectElem ? selectElem.value : "{{ inep_selecionado }}";
+        
+        if (!codigoInep || !nomeCampo || nomeCampo === 'codigo_inep_seletor') return;
+
+        const urlAutosave = "{{ url_for('escolas.autosave_escola') if 'escolas.autosave_escola' in url_for.__globals__ else '/autosave_escola' }}";
+
+        fetch(urlAutosave, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                codigo_inep: codigoInep,
+                campo: nomeCampo,
+                valor: valorCampo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "sucesso") {
+                field.classList.remove('field-salvando');
+                field.classList.add('field-salvo');
+                badge.className = 'status-save-badge salvo';
+                badge.innerHTML = '✓ Salvo';
+
+                const elemData = document.getElementById('label-ultima-atualizacao');
+                if (elemData && data.ultima_atualizacao) {
+                    elemData.innerText = data.ultima_atualizacao;
+                }
+
+                setTimeout(() => {
+                    badge.style.opacity = '0';
+                    field.classList.remove('field-salvo');
+                    field.classList.remove('field-salvando');
+                }, 1500);
+            } else {
+                exibirErro(field, badge);
+            }
+        })
+        .catch(err => {
+            console.error("Erro na gravação:", err);
+            exibirErro(field, badge);
+        });
+    }
+
+    function exibirErro(field, badge) {
+        field.classList.remove('field-salvando');
+        badge.className = 'status-save-badge erro';
+        badge.innerHTML = '✖ Erro ao salvar';
+    }
+});
+
+// Função para tratar a troca de escola no seletor
+function solicitarSenhaEscola(selectElem) {
+    const inep = selectElem.value;
+    if (inep) {
+        if (typeof window.abrirModalSenhaEscola === 'function') {
+            window.abrirModalSenhaEscola(inep);
+        } else {
+            window.location.href = "{{ url_for('escolas.escola') }}?inep=" + inep;
+        }
+    }
+}
+</script>
+{% endblock %}

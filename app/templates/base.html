@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#003366">
+    <meta name="description" content="Levantamento Informativo do Quadro de Professores e Profissionais de Apoio - 3ª GRE 2026">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <title>{% block title %}Levantamento 3ª GRE 2026{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        .nav-link.active {
+            font-weight: bold;
+            border-radius: 4px;
+            padding: 4px 10px;
+        }
+        .nav-link.nav-inicio.active { background-color: #003366 !important; color: #ffffff !important; }
+        .nav-link.nav-escola.active { background-color: #0056b3 !important; color: #ffffff !important; }
+        .nav-link.nav-apoio.active { background-color: #198754 !important; color: #ffffff !important; }
+        .nav-link.nav-planejamento.active { background-color: #fd7e14 !important; color: #ffffff !important; }
+        .nav-link.nav-professores.active { background-color: #6f42c1 !important; color: #ffffff !important; }
+        .nav-link.nav-atuacao.active { background-color: #0dcaf0 !important; color: #212529 !important; }
+        .nav-link.nav-quadro-informado.active { background-color: #d63384 !important; color: #ffffff !important; }
+        .nav-link.nav-quadro-escolar.active { background-color: #20c997 !important; color: #ffffff !important; }
+        .nav-link.nav-conferencia.active { background-color: #ffc107 !important; color: #212529 !important; }
+        .nav-link.nav-confirmacao.active { background-color: #0d6efd !important; color: #ffffff !important; }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% set active_inep = session.get('active_inep') or session.get('escola_inep') or '' %}
+
+    <nav class="top-nav">
+        <a href="{{ url_for('escolas.index') }}" class="nav-brand">3ª GRE • Levantamento 2026</a>
+        
+        <div class="nav-links">
+            <a href="{{ url_for('escolas.index') }}" class="nav-link nav-inicio {% if request.endpoint == 'escolas.index' %}active{% endif %}">Início</a>
+            
+            <a href="{{ url_for('escolas.escola', inep=active_inep) if active_inep else url_for('escolas.escola') }}" class="nav-link nav-escola {% if request.endpoint == 'escolas.escola' %}active{% endif %}">Escola</a>
+            
+            <a href="{{ url_for('apoio.apoio_clt', inep=active_inep) if active_inep else url_for('apoio.apoio_clt') }}" class="nav-link nav-apoio {% if request.endpoint in ['apoio.apoio_clt', 'apoio.step5'] %}active{% endif %}">Apoio CLT</a>
+            
+            <a href="{{ url_for('planejamento.planejamento', inep=active_inep) if active_inep else url_for('planejamento.planejamento') }}" class="nav-link nav-planejamento {% if request.endpoint == 'planejamento.planejamento' %}active{% endif %}">Planejamento</a>
+            
+            <a href="{{ url_for('professores.professores', inep=active_inep) if active_inep else url_for('professores.professores') }}" class="nav-link nav-professores {% if request.endpoint in ['professores.professores', 'professores.step4'] %}active{% endif %}">Professores</a>
+            
+            <a href="{{ url_for('atuacao.atuacao', inep=active_inep) if active_inep else url_for('atuacao.atuacao') }}" class="nav-link nav-atuacao {% if request.endpoint == 'atuacao.atuacao' %}active{% endif %}">Atuação</a>
+            
+            <a href="{{ url_for('quadro_informado.quadro_informado', inep=active_inep) if active_inep else url_for('quadro_informado.quadro_informado') }}" class="nav-link nav-quadro-informado {% if request.endpoint == 'quadro_informado.quadro_informado' %}active{% endif %}">Quadro Informado</a>
+            
+            <a href="{{ url_for('quadro_escolar.quadro_escolar', inep=active_inep) if active_inep else url_for('quadro_escolar.quadro_escolar') }}" class="nav-link nav-quadro-escolar {% if request.endpoint == 'quadro_escolar.quadro_escolar' %}active{% endif %}">Quadro Escolar</a>
+            
+            <a href="{{ url_for('conferencia_final.conferencia_final', inep=active_inep) if active_inep else url_for('conferencia_final.conferencia_final') }}" class="nav-link nav-conferencia {% if request.endpoint == 'conferencia_final.conferencia_final' %}active{% endif %}">Conferência</a>
+            
+            <a href="{{ url_for('confirmacao_final.confirmacao_final', inep=active_inep) if active_inep else url_for('confirmacao_final.confirmacao_final') }}" class="nav-link nav-confirmacao {% if request.endpoint == 'confirmacao_final.confirmacao_final' %}active{% endif %}">Confirmação</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>NUDEA • Núcleo de Desenvolvimento da Escola e da Aprendizagem • 3ª Gerência Regional de Educação</p>
+        <p>Dados de uso institucional — não compartilhar publicamente</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const seletores = document.querySelectorAll('select[name="codigo_inep_seletor"], select[name="inep"], select[name="escola_id"], select[name="selecionar_escola_id"], #seletor_escola, .seletor-escola');
+            seletores.forEach(function(seletor) {
+                seletor.addEventListener('change', function() {
+                    const val = this.value;
+                    if (val) {
+                        const urlAtual = new URL(window.location.href);
+                        urlAtual.searchParams.set('inep', val);
+                        window.location.href = urlAtual.toString();
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

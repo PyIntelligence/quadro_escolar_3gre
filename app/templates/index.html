@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Levantamento Informativo - 3ª GRE 2026{% endblock %}
+
+{% block content %}
+<div class="cabecalho-container">
+    <!-- Barra Superior Sólida -->
+    <div class="barra-topo"></div>
+
+    <!-- Conteúdo Interno (Logos e Título) -->
+    <div class="cabecalho-conteudo">
+        <div class="header-banner">
+            <div class="logo-left">
+                <div class="logo-box">
+                    <img src="/static/icons/icon-128.png" alt="Logo 3ª GRE" class="logo-15">
+                    <div class="logo-text">
+                        <div class="line-h2">3ª</div>
+                        <div class="line-h2">GERÊNCIA</div>
+                        <div class="line-h3">REGIONAL DE</div>
+                        <div class="line-h2">EDUCAÇÃO</div>
+                        
+                        <div class="tracos-divisores">
+                            <span class="traco t-vermelho"></span>
+                            <span class="traco t-amarelo"></span>
+                            <span class="traco t-azul"></span>
+                        </div>
+                        
+                        <div class="compromisso">COMPROMISSO COM A EDUCAÇÃO</div>
+                    </div>
+                </div>
+            </div>
+            <div class="title-center">
+                <h1>LEVANTAMENTO INFORMATIVO DO<br>QUADRO DE PROFESSORES E<br>PROFISSIONAIS DE APOIO EM EXERCÍCIO</h1>
+                <h2>3ª GRE - 2026</h2>
+            </div>
+            <div class="logo-right">
+                <div class="nutci-logo">
+                    <img src="/static/icons/icon-152-nudea.png" alt="NUDEA - Núcleo de Desenvolvimento da Escola e da Aprendizagem" class="logo-nudea">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra Inferior Tricolor -->
+    <div class="barra-base-tricolor">
+        <span class="cor-vermelha"></span>
+        <span class="cor-amarela"></span>
+        <span class="cor-azul"></span>
+    </div>
+</div>
+
+<table class="tabela-dupla-cor">
+    <thead>
+        <tr>
+            <th class="th-azul">OBJETIVO DO LEVANTAMENTO</th>
+            <th class="th-vermelho">RESPONSABILIDADES INSTITUCIONAIS</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="td-conteudo">
+                ATUALIZAR E CONSOLIDAR, PARA FINALIDADE ADMINISTRATIVA E INFORMATIVA, OS DADOS DOS PROFESSORES E PROFISSIONAIS DE APOIO CLT EFETIVAMENTE EM EXERCÍCIO NA UNIDADE ESCOLAR. O LEVANTAMENTO ABRANGE VÍNCULOS, UTB, FUNÇÕES, CARGA HORÁRIA ORIGINAL E AUTORIZADA, REDUÇÃO LEGAL VIGENTE, REGÊNCIA, COMPONENTES CURRICULARES, TURNOS, TURMAS, PLANEJAMENTO, CONSELHO ESCOLAR E DEMAIS ATIVIDADES QUE COMPÕEM A CARGA HORÁRIA. A PLANILHA NÃO ALTERA AUTOMATICAMENTE LOTAÇÃO, UTB, VÍNCULO OU REGISTROS OFICIAIS DA SEE/PB.
+            </td>
+            <td class="td-conteudo">
+                <strong>ESCOLA:</strong> PREENCHER, CONFERIR E CONFIRMAR A VERACIDADE DOS DADOS.<br><br>
+                <strong>NUDEA:</strong> MANTER A ESTRUTURA DO BANCO DE DADOS, PRESTAR SUPORTE TÉCNICO E MONITORAR INCONSISTÊNCIAS.<br><br>
+                <strong>3ª GRE:</strong> REALIZAR A CONFERÊNCIA ADMINISTRATIVA E OS ENCAMINHAMENTOS PERTINENTES.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="ordem-section">
+    <div class="section-header dark">ORDEM RECOMENDADA PARA O PREENCHIMENTO</div>
+    <div class="ordem-table">
+        <!-- 1. ESCOLA -->
+        <a href="{{ url_for('escolas.escola', inep=active_inep) if active_inep else url_for('escolas.escola') }}" class="ordem-row row-1">
+            <span class="num">1</span>
+            <span class="label">ESCOLA</span>
+            <span class="desc">CONFIRME A UNIDADE ESCOLAR, INFORME GESTOR(A), RESPONSÁVEL PELO PREENCHIMENTO, CARGO/FUNÇÃO, COMPETÊNCIA E COMPLETE OS DADOS DE GESTÃO E ORGANIZAÇÃO DA UNIDADE.</span>
+        </a>
+
+        <!-- 2. APOIO CLT -->
+        <a href="{{ url_for('apoio.apoio_clt', inep=active_inep) if active_inep else url_for('apoio.apoio_clt') }}" class="ordem-row row-2">
+            <span class="num">2</span>
+            <span class="label">APOIO CLT</span>
+            <span class="desc">CADASTRE CADA PROFISSIONAL UMA ÚNICA VEZ, UTILIZANDO O CPF COMO IDENTIFICADOR. INFORME EMPRESA/CONTRATO, FUNÇÃO CONTRATADA, FUNÇÃO EXERCIDA, CARGA HORÁRIA, TURNOS, DIAS, TELEFONE, DATA DE INÍCIO, SITUAÇÃO E OBSERVAÇÕES, QUANDO APLICÁVEL.</span>
+        </a>
+
+        <!-- 3. PLANEJAMENTO -->
+        <a href="{{ url_for('planejamento.planejamento', inep=active_inep) if active_inep else url_for('planejamento.planejamento') }}" class="ordem-row row-3">
+            <span class="num">3</span>
+            <span class="label">PLANEJAMENTO</span>
+            <span class="desc">CADASTRE OS DIAS E HORÁRIOS DO PLANEJAMENTO POR ÁREA. A VINCULAÇÃO ÀS ÁREAS DOS PROFESSORES IDENTIFICARÁ AUTOMATICAMENTE OS RESPECTIVOS DIAS.</span>
+        </a>
+
+        <!-- 4. PROFESSORES -->
+        <a href="{{ url_for('professores.professores', inep=active_inep) if active_inep else url_for('professores.professores') }}" class="ordem-row row-4">
+            <span class="num">4</span>
+            <span class="label">PROFESSORES</span>
+            <span class="desc">UTILIZE UMA LINHA PARA CADA MATRÍCULA. INFORME VÍNCULO, UTB, CARGA HORÁRIA E, QUANDO HOUVER, REDUÇÃO LEGAL, REGÊNCIA AUTORIZADA, ATO, FUNDAMENTO E VALIDADE.</span>
+        </a>
+
+        <!-- 5. ATUAÇÃO -->
+        <a href="{{ url_for('atuacao.atuacao', inep=active_inep) if active_inep else url_for('atuacao.atuacao') }}" class="ordem-row row-5">
+            <span class="num">5</span>
+            <span class="label">ATUAÇÃO</span>
+            <span class="desc">REGISTRE TODOS OS COMPONENTES E ATIVIDADES EXERCIDOS NESTA ESCOLA. A CH SOMENTE SERÁ CONTABILIZADA COM MATRÍCULA VÁLIDA E CONTABILIZA CH = SIM.</span>
+        </a>
+
+        <!-- 6. QUADRO INFORMADO -->
+        <a href="{{ url_for('quadro_informado.quadro_informado', inep=active_inep) if active_inep else url_for('quadro_informado.quadro_informado') }}" class="ordem-row row-6">
+            <span class="num">6</span>
+            <span class="label">QUADRO INFORMADO</span>
+            <span class="desc">CONSULTE A CONSOLIDAÇÃO AUTOMÁTICA DOS PROFESSORES, DAS ATIVIDADES E DAS CARGAS HORÁRIAS DECLARADAS. ESTA ABA RETRATA A REALIDADE INFORMADA PELA ESCOLA E INDICA CADASTROS A COMPLETAR OU REVISAR.</span>
+        </a>
+
+        <!-- 7. QUADRO ESCOLAR -->
+        <a href="{{ url_for('quadro_escolar.quadro_escolar', inep=active_inep) if active_inep else url_for('quadro_escolar.quadro_escolar') }}" class="ordem-row row-7">
+            <span class="num">7</span>
+            <span class="label">QUADRO ESCOLAR</span>
+            <span class="desc">CONSULTE A COMPARAÇÃO AUTOMÁTICA ENTRE A DEMANDA DA MATRIZ E A CH VÁLIDA ATRIBUÍDA. QUANDO SOLICITADO, REGISTRE A MANIFESTAÇÃO E A JUSTIFICATIVA DA ESCOLA. VACÂNCIA, COBERTURA PARCIAL E EXCESSO PODEM REPRESENTAR A REALIDADE.</span>
+        </a>
+
+        <!-- 8. CONFERÊNCIA FINAL -->
+        <a href="{{ url_for('conferencia_final.conferencia_final', inep=active_inep) if active_inep else url_for('conferencia_final.conferencia_final') }}" class="ordem-row row-8">
+            <span class="num">8</span>
+            <span class="label">CONFERÊNCIA FINAL</span>
+            <span class="desc">VERIFIQUE OS INDICADORES E AS PENDÊNCIAS DETALHADAS. CORRIJA OS DADOS NAS ABAS DE ORIGEM; NÃO ALTERE OS RESULTADOS AUTOMÁTICOS DESTA ABA.</span>
+        </a>
+
+        <!-- 9. CONFIRMAÇÃO FINAL -->
+        <a href="{{ url_for('confirmacao_final.confirmacao_final', inep=active_inep) if active_inep else url_for('confirmacao_final.confirmacao_final') }}" class="ordem-row row-9">
+            <span class="num">9</span>
+            <span class="label">CONFIRMAÇÃO FINAL</span>
+            <span class="desc">APÓS CONCLUIR OS CADASTROS E AS CORREÇÕES, RETORNE À ABA ESCOLA. A OPÇÃO CONFIRMO AS INFORMAÇÕES SOMENTE SERÁ LIBERADA QUANDO NÃO HOUVER PENDÊNCIAS IMPEDITIVAS.</span>
+        </a>
+    </div>
+</div>
+
+<div class="orientacoes">
+    <strong>ORIENTAÇÕES IMPORTANTES:</strong> UTILIZE AS LISTAS DE SELEÇÃO E PREENCHA OS CAMPOS LIVRES EM LETRAS MAIÚSCULAS. NÃO ALTERE FÓRMULAS, NÃO INSIRA OU EXCLUA LINHAS OU COLUNAS E NÃO COPIE DADOS ENTRE ARQUIVOS DE ESCOLAS DIFERENTES. <u>PROFESSORES:</u> UMA LINHA POR MATRÍCULA, NO FORMATO 000.000-0. <u>PROFISSIONAIS DE APOIO CLT:</u> UMA LINHA POR CPF, NO FORMATO 000.000.000-00; ELES NÃO POSSUEM MATRÍCULA ESTADUAL. INFORME SOMENTE PROFISSIONAIS EFETIVAMENTE EM EXERCÍCIO NA UNIDADE. <u>QUADRO INFORMADO</u>, <u>QUADRO ESCOLAR</u> E <u>CONFERÊNCIA FINAL</u> SÃO ABAS AUTOMÁTICAS; AS CORREÇÕES DEVEM SER FEITAS NAS ABAS DE ORIGEM. OS DADOS SÃO DE USO INSTITUCIONAL E NÃO DEVEM SER COMPARTILHADOS PUBLICAMENTE.
+</div>
+{% endblock %}

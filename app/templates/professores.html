@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Professores - {{ escola.nome if escola else 'Quadro de Professores' }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilo para fixar o cabeçalho e limitar a rolagem vertical a ~15 linhas */
+    .tabela-container {
+        max-height: 560px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        position: relative;
+    }
+    
+    .tabela-container thead th {
+        position: sticky;
+        top: 0;
+        background-color: #003366 !important;
+        color: white !important;
+        z-index: 10;
+        box-shadow: inset 0 -1px 0 #dee2e6;
+    }
+</style>
+
+<div class="card mb-4" style="margin-top: 15px;">
+    <!-- Cabeçalho e Seletor de Escola -->
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #f8f9fa; padding: 15px; border-bottom: 2px solid #dee2e6; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin: 0; color: #003366; font-size: 1.5rem;">Quadro Informativo de Professores</h2>
+        <div class="seletor-container d-flex align-items-center">
+            <label for="seletor_escola" class="fw-bold me-2" style="white-space: nowrap; margin-right: 8px;">Selecionar Escola:</label>
+            <select id="seletor_escola" name="codigo_inep_seletor" class="form-select d-inline-block w-auto" style="padding: 6px 12px; border-radius: 4px; border: 1px solid #ced4da;">
+                {% for item in todas_escolas %}
+                    <option value="{{ item.inep_visual }}" {% if item.inep_visual == inep_selecionado %}selected{% endif %}>
+                        {{ item.nome }} (INEP: {{ item.inep_visual }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="card-body" style="padding: 20px;">
+        {% if escola %}
+            <div class="alert alert-info d-flex justify-content-between align-items-center" style="background-color: #e7f1ff; border-color: #b6d4fe; color: #084298; padding: 12px 20px; border-radius: 6px; margin-bottom: 15px;">
+                <div>
+                    <strong style="font-size: 1.1em;">{{ escola.nome }}</strong><br>
+                    <small>INEP Oficial: <strong>{{ escola.inep_visual }}</strong> | Total de Registros: <strong>{{ registros|length }}</strong></small>
+                </div>
+                <form method="POST" action="{{ url_for('professores.professores', inep=escola.inep_visual) }}">
+                    <input type="hidden" name="action" value="add">
+                    <button type="submit" class="btn btn-success" style="background-color: #198754; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; white-space: nowrap;">
+                        + Adicionar Professor
+                    </button>
+                </form>
+            </div>
+        {% else %}
+            <div class="alert alert-warning" style="padding: 12px 20px; background-color: #fff3cd; color: #664d03; border-radius: 6px;">
+                Nenhuma escola selecionada. Por favor, escolha uma unidade no menu acima.
+            </div>
+        {% endif %}
+
+        <!-- Container com barra de rolagem vertical (15 linhas) e horizontal -->
+        <div class="table-responsive tabela-container">
+            <table class="table table-bordered table-striped table-hover align-middle" style="width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 0; font-size: 0.88rem;">
+                <thead style="background-color: #003366; color: white; text-align: center; vertical-align: middle;">
+                    <tr>
+                        <th style="min-width: 130px; padding: 8px;">Matrícula *</th>
+                        <th style="min-width: 140px; padding: 8px;">CPF</th>
+                        <th style="min-width: 220px; padding: 8px;">Nome Completo *</th>
+                        <th style="min-width: 180px; padding: 8px;">Vínculo *</th>
+                        <th style="min-width: 160px; padding: 8px;">UTB é Esta Escola? *</th>
+                        <th style="min-width: 140px; padding: 8px;">UTB Informada</th>
+                        <th style="min-width: 260px; padding: 8px;">Forma de Atuação *</th>
+                        <th style="min-width: 110px; padding: 8px;">CH Orig. (Vínculo) *</th>
+                        <th style="min-width: 180px; padding: 8px;">Possui CH Fora? *</th>
+                        <th style="min-width: 200px; padding: 8px;">Outra Unid./Função Vínculo</th>
+                        <th style="min-width: 110px; padding: 8px;">CH Fora</th>
+                        <th style="min-width: 170px; padding: 8px;">Conselho Escolar *</th>
+                        <th style="min-width: 240px; padding: 8px;">Áreas de Planejamento *</th>
+                        <th style="min-width: 140px; padding: 8px;">Dias de Planejamento</th>
+                        <th style="min-width: 160px; padding: 8px;">Redução Legal Vigente? *</th>
+                        <th style="min-width: 110px; padding: 8px;">CH Autorizada *</th>
+                        <th style="min-width: 110px; padding: 8px;">Regência Aut.</th>
+                        <th style="min-width: 140px; padding: 8px;">Ato de Autorização</th>
+                        <th style="min-width: 150px; padding: 8px;">Fundamento Legal</th>
+                        <th style="min-width: 130px; padding: 8px;">Validade do Ato</th>
+                        <th style="min-width: 160px; padding: 8px;">Conferido pela Escola? *</th>
+                        <th style="min-width: 200px; padding: 8px;">Observações</th>
+                        <th style="min-width: 90px; padding: 8px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prof in registros %}
+                    <tr data-id="{{ prof.id }}">
+                        <!-- 1. Matrícula -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="matricula" value="{{ prof.matricula or '' }}" placeholder="000.000-0">
+                        </td>
+                        <!-- 2. CPF -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="cpf" value="{{ prof.cpf or '' }}" placeholder="000.000.000-00">
+                        </td>
+                        <!-- 3. Nome Completo -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto fw-bold" data-campo="nome" value="{{ prof.nome or '' }}" style="font-weight: bold;">
+                        </td>
+                        <!-- 4. Vínculo -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="vinculo">
+                                <option value="EFETIVO" {% if prof.vinculo == 'EFETIVO' %}selected{% endif %}>EFETIVO</option>
+                                <option value="PRESTADOR DE SERVIÇO" {% if prof.vinculo == 'PRESTADOR DE SERVIÇO' or prof.vinculo == 'PRESTADOR' %}selected{% endif %}>PRESTADOR DE SERVIÇO</option>
+                                <option value="FADEX" {% if prof.vinculo == 'FADEX' %}selected{% endif %}>FADEX</option>
+                                <option value="CONTRATO DE EMERGÊNCIA" {% if prof.vinculo == 'CONTRATO DE EMERGÊNCIA' or prof.vinculo == 'CONTRATADO' %}selected{% endif %}>CONTRATO DE EMERGÊNCIA</option>
+                                <option value="OUTRO" {% if prof.vinculo == 'OUTRO' %}selected{% endif %}>OUTRO</option>
+                            </select>
+                        </td>
+                        <!-- 5. UTB é Esta Escola? -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="utb_esta_escola">
+                                <option value="SIM" {% if prof.utb_esta_escola == 'SIM' %}selected{% endif %}>SIM</option>
+                                <option value="NÃO" {% if prof.utb_esta_escola == 'NÃO' %}selected{% endif %}>NÃO</option>
+                                <option value="SITUAÇÃO A VERIFICAR" {% if prof.utb_esta_escola == 'SITUAÇÃO A VERIFICAR' %}selected{% endif %}>SITUAÇÃO A VERIFICAR</option>
+                            </select>
+                        </td>
+                        <!-- 6. UTB Informada -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="utb_informada" value="{{ prof.utb_informada or '' }}">
+                        </td>
+                        <!-- 7. Forma de Atuação -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="forma_atuacao">
+                                <option value="CUMPRE INTEGRALMENTE A CH NESTA UNIDADE" {% if prof.forma_atuacao == 'CUMPRE INTEGRALMENTE A CH NESTA UNIDADE' %}selected{% endif %}>CUMPRE INTEGRALMENTE A CH NESTA UNIDADE</option>
+                                <option value="COMPLEMENTA CH NESTA UNIDADE" {% if prof.forma_atuacao == 'COMPLEMENTA CH NESTA UNIDADE' %}selected{% endif %}>COMPLEMENTA CH NESTA UNIDADE</option>
+                                <option value="CUMPRE PARTE DA CH EM OUTRA UNIDADE" {% if prof.forma_atuacao == 'CUMPRE PARTE DA CH EM OUTRA UNIDADE' %}selected{% endif %}>CUMPRE PARTE DA CH EM OUTRA UNIDADE</option>
+                                <option value="TEMPORARIAMENTE EM EXERCÍCIO NESTA UNIDADE" {% if prof.forma_atuacao == 'TEMPORARIAMENTE EM EXERCÍCIO NESTA UNIDADE' %}selected{% endif %}>TEMPORARIAMENTE EM EXERCÍCIO NESTA UNIDADE</option>
+                                <option value="EXERCE FUNÇÃO DIFERENTE DA DOCÊNCIA" {% if prof.forma_atuacao == 'EXERCE FUNÇÃO DIFERENTE DA DOCÊNCIA' %}selected{% endif %}>EXERCE FUNÇÃO DIFERENTE DA DOCÊNCIA</option>
+                                <option value="OUTRA SITUAÇÃO" {% if prof.forma_atuacao == 'OUTRA SITUAÇÃO' %}selected{% endif %}>OUTRA SITUAÇÃO</option>
+                            </select>
+                        </td>
+                        <!-- 8. CH Original (Vínculo) -->
+                        <td style="padding: 4px;">
+                            <input type="number" step="0.5" class="form-control form-control-sm campo-auto" data-campo="carga_horaria_original" value="{{ prof.carga_horaria_original or 0 }}">
+                        </td>
+                        <!-- 9. Possui CH Estadual Fora desta Escola? -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="possui_ch_fora">
+                                <option value="NÃO" {% if prof.possui_ch_fora == 'NÃO' %}selected{% endif %}>NÃO</option>
+                                <option value="SIM" {% if prof.possui_ch_fora == 'SIM' %}selected{% endif %}>SIM</option>
+                                <option value="SITUAÇÃO A VERIFICAR" {% if prof.possui_ch_fora == 'SITUAÇÃO A VERIFICAR' %}selected{% endif %}>SITUAÇÃO A VERIFICAR</option>
+                            </select>
+                        </td>
+                        <!-- 10. Outra Unidade / Função do Vínculo -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="outra_unidade_funcao" value="{{ prof.outra_unidade_funcao or prof.outra_unidade or '' }}">
+                        </td>
+                        <!-- 11. CH Fora desta Escola -->
+                        <td style="padding: 4px;">
+                            <input type="number" step="0.5" class="form-control form-control-sm campo-auto" data-campo="ch_fora" value="{{ prof.ch_fora or 0 }}">
+                        </td>
+                        <!-- 12. Conselho Escolar -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="conselho_escolar">
+                                <option value="NÃO PARTICIPA" {% if prof.conselho_escolar == 'NÃO PARTICIPA' %}selected{% endif %}>NÃO PARTICIPA</option>
+                                <option value="TITULAR" {% if prof.conselho_escolar == 'TITULAR' %}selected{% endif %}>TITULAR</option>
+                                <option value="SUPLENTE" {% if prof.conselho_escolar == 'SUPLENTE' %}selected{% endif %}>SUPLENTE</option>
+                                <option value="PRESIDENTE" {% if prof.conselho_escolar == 'PRESIDENTE' %}selected{% endif %}>PRESIDENTE</option>
+                                <option value="VICE-PRESIDENTE" {% if prof.conselho_escolar == 'VICE-PRESIDENTE' %}selected{% endif %}>VICE-PRESIDENTE</option>
+                                <option value="SECRETÁRIO(A)" {% if prof.conselho_escolar == 'SECRETÁRIO(A)' %}selected{% endif %}>SECRETÁRIO(A)</option>
+                                <option value="OUTRA FUNÇÃO" {% if prof.conselho_escolar == 'OUTRA FUNÇÃO' %}selected{% endif %}>OUTRA FUNÇÃO</option>
+                            </select>
+                        </td>
+                        <!-- 13. Áreas de Planejamento -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="areas_planejamento">
+                                <option value="LINGUAGENS" {% if prof.areas_planejamento == 'LINGUAGENS' %}selected{% endif %}>LINGUAGENS</option>
+                                <option value="MATEMÁTICA" {% if prof.areas_planejamento == 'MATEMÁTICA' %}selected{% endif %}>MATEMÁTICA</option>
+                                <option value="CIÊNCIAS DA NATUREZA" {% if prof.areas_planejamento == 'CIÊNCIAS DA NATUREZA' %}selected{% endif %}>CIÊNCIAS DA NATUREZA</option>
+                                <option value="CIÊNCIAS HUMANAS E SOCIAIS" {% if prof.areas_planejamento == 'CIÊNCIAS HUMANAS E SOCIAIS' %}selected{% endif %}>CIÊNCIAS HUMANAS E SOCIAIS</option>
+                                <option value="FORMAÇÃO TÉCNICA E PROFISSIONAL" {% if prof.areas_planejamento == 'FORMAÇÃO TÉCNICA E PROFISSIONAL' %}selected{% endif %}>FORMAÇÃO TÉCNICA E PROFISSIONAL</option>
+                                <option value="ANOS INICIAIS" {% if prof.areas_planejamento == 'ANOS INICIAIS' %}selected{% endif %}>ANOS INICIAIS</option>
+                                <option value="ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE" {% if prof.areas_planejamento == 'ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE' %}selected{% endif %}>ATENDIMENTO EDUCACIONAL ESPECIALIZADO - AEE</option>
+                                <option value="REGIME DE PROGRESSÃO PARCIAL - RPP" {% if prof.areas_planejamento == 'REGIME DE PROGRESSÃO PARCIAL - RPP' %}selected{% endif %}>REGIME DE PROGRESSÃO PARCIAL - RPP</option>
+                                <option value="LÍNGUA PORTUGUESA" {% if prof.areas_planejamento == 'LÍNGUA PORTUGUESA' %}selected{% endif %}>LÍNGUA PORTUGUESA</option>
+                                <option value="OUTRA" {% if prof.areas_planejamento == 'OUTRA' %}selected{% endif %}>OUTRA</option>
+                            </select>
+                        </td>
+                        <!-- 14. Dias de Planejamento -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="dias_planejamento" value="{{ prof.dias_planejamento or '' }}" placeholder="Ex: SEGUNDA, QUARTA">
+                        </td>
+                        <!-- 15. Redução Legal Vigente? -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="reducao_legal_vigente">
+                                <option value="NÃO" {% if prof.reducao_legal_vigente == 'NÃO' %}selected{% endif %}>NÃO</option>
+                                <option value="SIM" {% if prof.reducao_legal_vigente == 'SIM' %}selected{% endif %}>SIM</option>
+                                <option value="SITUAÇÃO A VERIFICAR" {% if prof.reducao_legal_vigente == 'SITUAÇÃO A VERIFICAR' %}selected{% endif %}>SITUAÇÃO A VERIFICAR</option>
+                            </select>
+                        </td>
+                        <!-- 16. CH Autorizada nesta Unidade -->
+                        <td style="padding: 4px;">
+                            <input type="number" step="0.5" class="form-control form-control-sm campo-auto" data-campo="carga_horaria_autorizada" value="{{ prof.carga_horaria_autorizada or 0 }}">
+                        </td>
+                        <!-- 17. Regência Autorizada -->
+                        <td style="padding: 4px;">
+                            <input type="number" step="0.5" class="form-control form-control-sm campo-auto" data-campo="regencia_autorizada" value="{{ prof.regencia_autorizada or 0 }}">
+                        </td>
+                        <!-- 18. Ato de Autorização -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="ato_autorizacao" value="{{ prof.ato_autorizacao or '' }}">
+                        </td>
+                        <!-- 19. Fundamento Legal -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="fundamento_legal" value="{{ prof.fundamento_legal or '' }}">
+                        </td>
+                        <!-- 20. Validade do Ato -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="validade_ato" value="{{ prof.validade_ato or '' }}" placeholder="dd/mm/aaaa">
+                        </td>
+                        <!-- 21. Conferido pela Escola? -->
+                        <td style="padding: 4px;">
+                            <select class="form-select form-select-sm campo-auto" data-campo="situacao_cadastro">
+                                <option value="SIM" {% if prof.situacao_cadastro == 'SIM' or prof.situacao_cadastro == 'CONFERIDO' %}selected{% endif %}>SIM</option>
+                                <option value="NÃO" {% if prof.situacao_cadastro == 'NÃO' or prof.situacao_cadastro == 'PENDENTE' %}selected{% endif %}>NÃO</option>
+                                <option value="SITUAÇÃO A VERIFICAR" {% if prof.situacao_cadastro == 'SITUAÇÃO A VERIFICAR' %}selected{% endif %}>SITUAÇÃO A VERIFICAR</option>
+                            </select>
+                        </td>
+                        <!-- 22. Observações -->
+                        <td style="padding: 4px;">
+                            <input type="text" class="form-control form-control-sm campo-auto" data-campo="observacoes" value="{{ prof.observacoes or '' }}">
+                        </td>
+                        <!-- Ação: Deletar -->
+                        <td style="padding: 4px; text-align: center;">
+                            <form method="POST" action="{{ url_for('professores.professores', inep=escola.inep_visual if escola else '') }}" onsubmit="return confirm('Deseja realmente remover este professor?');" style="margin: 0;">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="id" value="{{ prof.id }}">
+                                <button type="submit" class="btn btn-danger btn-sm" style="background-color: #dc3545; color: white; border: none; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                    Excluir
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="23" style="text-align: center; color: #6c757d; padding: 25px; font-style: italic;">
+                            Nenhum professor registrado para esta escola no momento. Clique em "+ Adicionar Professor" para incluir.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Troca instantânea de escola ao mudar a seleção no Dropdown
+    const seletorEscola = document.getElementById('seletor_escola');
+    if (seletorEscola) {
+        seletorEscola.addEventListener('change', function() {
+            const inepSelecionado = this.value;
+            if (inepSelecionado) {
+                window.location.href = "{{ url_for('professores.professores') }}?inep=" + encodeURIComponent(inepSelecionado);
+            }
+        });
+    }
+
+    // 2. Auto-salvamento AJAX ao editar qualquer célula da planilha (com feedback visual verde/vermelho)
+    document.querySelectorAll('.campo-auto').forEach(function(elemento) {
+        elemento.addEventListener('change', function() {
+            const tr = this.closest('tr');
+            const profId = tr.dataset.id;
+            const campo = this.dataset.campo;
+            const valor = this.value;
+
+            fetch("{{ url_for('professores.atualizar_campo') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id: profId,
+                    campo: campo,
+                    valor: valor
+                })
+            })
+            .then(resposta => resposta.json())
+            .then(data => {
+                if (data.sucesso) {
+                    this.style.border = '2px solid #198754';
+                    this.style.backgroundColor = '#e8f5e9';
+                    setTimeout(() => { 
+                        this.style.border = ''; 
+                        this.style.backgroundColor = '';
+                    }, 1000);
+                } else {
+                    this.style.border = '2px solid #dc3545';
+                    alert("Erro ao salvar no banco: " + (data.erro || 'Instabilidade temporária'));
+                }
+            })
+            .catch(erro => {
+                console.error(erro);
+                this.style.border = '2px solid #dc3545';
+                alert("Falha de conexão com o PostgreSQL ao tentar salvar.");
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

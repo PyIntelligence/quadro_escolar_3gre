@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-robot"></i> Sincronização Inteligente (SIAGE + Google Sheets)
+                    </h4>
+                </div>
+                <div class="card-body">
+                    
+                    <div class="alert alert-info">
+                        <strong><i class="bi bi-info-circle"></i> Regra de Preenchimento Incremental:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>O robô varre o SIAGE e insere as informações que faltam no seu sistema.</li>
+                            <li><strong>Não Destrutivo:</strong> Se um campo já tiver sido digitado manualmente, o robô <strong>preserva o seu texto</strong> e não sobrescreve.</li>
+                            <li>Campos não encontrados no SIAGE podem ser complementados pelo link do Google Sheets.</li>
+                        </ul>
+                    </div>
+
+                    <form id="form-sincronizacao" onsubmit="iniciarSincronizacao(event)">
+                        <div class="mb-3">
+                            <label for="url_google_sheets" class="form-label font-weight-bold">
+                                Link do Google Sheets da 3ª GRE (Opcional):
+                            </label>
+                            <input 
+                                type="url" 
+                                class="form-control" 
+                                id="url_google_sheets" 
+                                name="url_google_sheets" 
+                                placeholder="https://docs.google.com/spreadsheets/d/..."
+                            >
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" id="btn-iniciar" class="btn btn-success btn-lg">
+                                <i class="bi bi-play-fill"></i> Iniciar Sincronização Automática
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Painel de Progresso -->
+                    <div id="painel-progresso" class="mt-4" style="display: none;">
+                        <hr>
+                        <h5 id="status-texto" class="text-primary mb-2">🚀 Preparando robô...</h5>
+                        <div class="progress" style="height: 25px;">
+                            <div 
+                                id="barra-progresso" 
+                                class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                role="progressbar" 
+                                style="width: 0%;" 
+                                aria-valuenow="0" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100">
+                                <span id="progresso-porcentagem" class="fw-bold">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{{ url_for('escolas.escola') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar para Dados da Escola
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let eventSource = null;
+
+function iniciarSincronizacao(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-iniciar');
+    const painel = document.getElementById('painel-progresso');
+    const urlSheets = document.getElementById('url_google_sheets').value;
+    const txtStatus = document.getElementById('status-texto');
+    const barra = document.getElementById('barra-progresso');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Conectando...';
+    painel.style.display = 'block';
+
+    txtStatus.className = "text-primary mb-2";
+    txtStatus.innerText = "🚀 Conectando ao servidor...";
+    barra.className = "progress-bar progress-bar-striped progress-bar-animated bg-success";
+
+    fetch("{{ url_for('escolas.executar_sincronizacao_siage') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url_google_sheets: urlSheets })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "sucesso") {
+            conectarStreamProgresso();
+        } else {
+            exibirErro(data.mensagem || "Erro ao iniciar.");
+            resetarBotao();
+        }
+    })
+    .catch(() => {
+        exibirErro("Erro na comunicação com o servidor Flask.");
+        resetarBotao();
+    });
+}
+
+function conectarStreamProgresso() {
+    if (eventSource) eventSource.close();
+
+    eventSource = new EventSource("{{ url_for('escolas.stream_progresso_siage') }}");
+
+    eventSource.onmessage = function(e) {
+        const dados = JSON.parse(e.data);
+        const barra = document.getElementById('barra-progresso');
+        const txtPct = document.getElementById('progresso-porcentagem');
+        const txtStatus = document.getElementById('status-texto');
+
+        const pct = dados.percentual || 0;
+        barra.style.width = pct + '%';
+        txtPct.innerText = pct + '%';
+        txtStatus.innerText = dados.status || "Processando...";
+
+        if (dados.erro) {
+            eventSource.close();
+            barra.className = "progress-bar bg-danger";
+            txtStatus.className = "text-danger mb-2";
+            resetarBotao();
+            return;
+        }
+
+        if (pct >= 100 && !dados.em_execucao) {
+            eventSource.close();
+            barra.classList.remove('progress-bar-animated');
+            txtStatus.innerText = "🎉 Sincronização concluída com sucesso!";
+            resetarBotao();
+        }
+    };
+
+    eventSource.onerror = function() {
+        if (eventSource) eventSource.close();
+        resetarBotao();
+    };
+}
+
+function exibirErro(msg) {
+    const txtStatus = document.getElementById('status-texto');
+    txtStatus.innerText = "❌ " + msg;
+    txtStatus.className = "text-danger mb-2";
+}
+
+function resetarBotao() {
+    const btn = document.getElementById('btn-iniciar');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-play-fill"></i> Iniciar Sincronização Automática';
+}
+</script>
+{% endblock %}

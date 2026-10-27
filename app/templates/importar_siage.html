@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Importar Dados do SIAGE para o Banco de Dados</h4>
+        </div>
+        <div class="card-body">
+            <p>Selecione o arquivo exportado do SIAGE (.xlsx ou .csv). Os dados serão gravados diretamente na base de dados na nuvem (Neon.tech).</p>
+            
+            <form method="POST" enctype="multipart/form-data" class="mt-3">
+                <div class="mb-3">
+                    <label for="arquivo_siage" class="form-label">Arquivo de Exportação do SIAGE:</label>
+                    <input type="file" class="form-control" id="arquivo_siage" name="arquivo_siage" accept=".csv, .xlsx, .xls" required>
+                </div>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-cloud-upload"></i> Carregar para o Neon.tech
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

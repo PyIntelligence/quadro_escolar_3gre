@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}3. PLANEJAMENTO POR ÁREA - Levantamento 3ª GRE{% endblock %}
+
+{% block content %}
+<div class="sheet-container">
+    <!-- Banner Superior -->
+    <div class="sheet-header-banner">
+        <h2>PLANEJAMENTO POR ÁREA DE CONHECIMENTO</h2>
+        <p>INFORME A ORGANIZAÇÃO REGULAR DO PLANEJAMENTO NA UNIDADE ESCOLAR. PREENCHA OS CAMPOS DIRETAMENTE EM CADA ÁREA OU ADICIONE LINHAS COMPLEMENTARES.</p>
+        {% if escola %}
+        <p style="margin-top: 5px; font-weight: bold; color: #dceefb;">
+            UNIDADE ESCOLAR: {{ escola.unidade_escolar or escola.nome }} (INEP: {{ escola.codigo_inep or escola.inep_visual or escola.inep }})
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Bloco Sanfona / Colapsável para Adicionar Área Adicional (No Topo) -->
+    <details class="collapsible-card" style="margin-bottom: 20px;">
+        <summary class="collapsible-summary">
+            <span>➕ Adicionar Área Adicional / Horário Extra</span>
+            <span class="toggle-icon">▼</span>
+        </summary>
+        <div class="form-card sheet-form" style="margin-top: 15px; border-top: 2px solid #0056b3;">
+            <form method="POST" action="{{ url_for('planejamento.planejamento', inep=inep) }}">
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="inep" value="{{ inep or '' }}">
+
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <label>Área de Conhecimento *</label>
+                        <input type="text" name="area_conhecimento" required placeholder="EX: ÁREA DIVERSIFICADA / PROJETO DE VIDA" style="text-transform: uppercase;">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Dia da Semana</label>
+                        <select name="dia_semana">
+                            <option value="">SELECIONE...</option>
+                            {% for dia in ['SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'] %}
+                                <option value="{{ dia }}">{{ dia }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Horário Inicial</label>
+                        <select name="horario_inicio">
+                            <option value="">SELECIONE...</option>
+                            {% for hora in ['07:00', '07:30', '07:50', '08:00', '08:30', '08:40', '09:00', '09:30', '09:50', '10:00', '10:30', '10:40', '11:00', '11:30', '13:00', '13:30', '13:50', '14:00', '14:30', '14:40', '15:00', '15:30', '15:50', '16:00', '16:40', '17:30', '18:00', '18:50', '19:00', '19:35', '20:20', '21:05'] %}
+                                <option value="{{ hora }}">{{ hora }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Horário Final</label>
+                        <select name="horario_fim">
+                            <option value="">SELECIONE...</option>
+                            {% for hora in ['07:50', '08:00', '08:30', '08:40', '09:00', '09:30', '09:50', '10:00', '10:30', '10:40', '11:00', '11:30', '12:00', '12:20', '13:50', '14:00', '14:30', '14:40', '15:00', '15:30', '15:50', '16:00', '16:30', '16:40', '17:00', '17:10', '17:30', '18:00', '18:20', '19:35', '20:20', '21:00', '21:05', '21:50', '22:00'] %}
+                                <option value="{{ hora }}">{{ hora }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Turno</label>
+                        <select name="turno">
+                            <option value="">SELECIONE...</option>
+                            <option value="MANHÃ">MANHÃ</option>
+                            <option value="TARDE">TARDE</option>
+                            <option value="NOITE">NOITE</option>
+                            <option value="INTEGRAL">INTEGRAL</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Articulador / Responsável</label>
+                        <input type="text" name="responsavel" style="text-transform: uppercase;" placeholder="NOME DO RESPONSÁVEL">
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Observação</label>
+                        <input type="text" name="observacao" style="text-transform: uppercase;" placeholder="INFORMAÇÕES COMPLEMENTARES DA ÁREA">
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 15px;">
+                    <button type="submit" class="btn btn-success">+ Salvar Nova Área</button>
+                </div>
+            </form>
+        </div>
+    </details>
+
+    <!-- Tabela estilo Planilha Interativa -->
+    <div class="table-card sheet-table-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">Quadro de Planejamento da Escola ({{ planejamentos|length }} Áreas)</h3>
+            <span id="save-status" style="font-size: 0.85rem; font-weight: bold; color: #28a745; display: none;">✔ Alterações salvas automaticamente</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="sheet-table">
+                <thead>
+                    <tr class="header-main">
+                        <th class="text-center" style="width: 40px;">Nº</th>
+                        <th style="min-width: 220px;">ÁREA DE CONHECIMENTO</th>
+                        <th style="min-width: 160px;">DIA DA SEMANA</th>
+                        <th style="min-width: 120px;">HORÁRIO INÍCIO</th>
+                        <th style="min-width: 120px;">HORÁRIO FIM</th>
+                        <th style="min-width: 130px;">TURNO</th>
+                        <th style="min-width: 220px;">RESPONSÁVEL / ARTICULADOR</th>
+                        <th style="min-width: 220px;">OBSERVAÇÕES</th>
+                        <th class="text-center" style="min-width: 140px;">AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set lista_dias = ['SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'] %}
+                    {% set lista_horas_ini = ['07:00', '07:30', '07:50', '08:00', '08:30', '08:40', '09:00', '09:30', '09:50', '10:00', '10:30', '10:40', '11:00', '11:30', '13:00', '13:30', '13:50', '14:00', '14:30', '14:40', '15:00', '15:30', '15:50', '16:00', '16:40', '17:30', '18:00', '18:50', '19:00', '19:35', '20:20', '21:05'] %}
+                    {% set lista_horas_fim = ['07:50', '08:00', '08:30', '08:40', '09:00', '09:30', '09:50', '10:00', '10:30', '10:40', '11:00', '11:30', '12:00', '12:20', '13:50', '14:00', '14:30', '14:40', '15:00', '15:30', '15:50', '16:00', '16:30', '16:40', '17:00', '17:10', '17:30', '18:00', '18:20', '19:35', '20:20', '21:00', '21:05', '21:50', '22:00'] %}
+                    {% set lista_turnos = ['MANHÃ', 'TARDE', 'NOITE', 'INTEGRAL'] %}
+
+                    {% for r in planejamentos %}
+                    <tr data-id="{{ r.id }}">
+                        <form method="POST" action="{{ url_for('planejamento.planejamento', inep=inep) }}">
+                            <input type="hidden" name="action" value="save">
+                            <input type="hidden" name="id" value="{{ r.id }}">
+                            <input type="hidden" name="inep" value="{{ inep or '' }}">
+
+                            <td class="text-center"><strong>{{ loop.index }}</strong></td>
+                            
+                            <!-- ÁREA DE CONHECIMENTO -->
+                            <td>
+                                <input type="text" name="area_conhecimento" value="{{ r.area_conhecimento or '' }}" required class="form-control-sheet inline-autosave" style="font-weight: bold;">
+                            </td>
+
+                            <!-- DIA DA SEMANA -->
+                            <td>
+                                <select name="dia_semana" class="form-control-sheet inline-autosave">
+                                    <option value="">SELECIONE...</option>
+                                    {% for dia in lista_dias %}
+                                        <option value="{{ dia }}" {% if r.dia_semana and r.dia_semana.strip().upper() == dia %}selected{% endif %}>{{ dia }}</option>
+                                    {% endfor %}
+                                    {% if r.dia_semana and r.dia_semana.strip().upper() not in lista_dias %}
+                                        <option value="{{ r.dia_semana.strip().upper() }}" selected>{{ r.dia_semana.strip().upper() }}</option>
+                                    {% endif %}
+                                </select>
+                            </td>
+
+                            <!-- HORÁRIO INÍCIO -->
+                            <td>
+                                <select name="horario_inicio" class="form-control-sheet inline-autosave">
+                                    <option value="">SELECIONE...</option>
+                                    {% for hora in lista_horas_ini %}
+                                        <option value="{{ hora }}" {% if r.horario_inicio and r.horario_inicio.strip() == hora %}selected{% endif %}>{{ hora }}</option>
+                                    {% endfor %}
+                                    {% if r.horario_inicio and r.horario_inicio.strip() not in lista_horas_ini %}
+                                        <option value="{{ r.horario_inicio.strip() }}" selected>{{ r.horario_inicio.strip() }}</option>
+                                    {% endif %}
+                                </select>
+                            </td>
+
+                            <!-- HORÁRIO FIM -->
+                            <td>
+                                <select name="horario_fim" class="form-control-sheet inline-autosave">
+                                    <option value="">SELECIONE...</option>
+                                    {% for hora in lista_horas_fim %}
+                                        <option value="{{ hora }}" {% if r.horario_fim and r.horario_fim.strip() == hora %}selected{% endif %}>{{ hora }}</option>
+                                    {% endfor %}
+                                    {% if r.horario_fim and r.horario_fim.strip() not in lista_horas_fim %}
+                                        <option value="{{ r.horario_fim.strip() }}" selected>{{ r.horario_fim.strip() }}</option>
+                                    {% endif %}
+                                </select>
+                            </td>
+
+                            <!-- TURNO -->
+                            <td>
+                                <select name="turno" class="form-control-sheet inline-autosave">
+                                    <option value="">SELECIONE...</option>
+                                    {% for t in lista_turnos %}
+                                        <option value="{{ t }}" {% if r.turno and r.turno.strip().upper() == t %}selected{% endif %}>{{ t }}</option>
+                                    {% endfor %}
+                                    {% if r.turno and r.turno.strip().upper() not in lista_turnos %}
+                                        <option value="{{ r.turno.strip().upper() }}" selected>{{ r.turno.strip().upper() }}</option>
+                                    {% endif %}
+                                </select>
+                            </td>
+
+                            <!-- RESPONSÁVEL / ARTICULADOR -->
+                            <td>
+                                <input type="text" name="responsavel" value="{{ r.responsavel or '' }}" placeholder="ARTICULADOR" class="form-control-sheet inline-autosave" style="text-transform: uppercase;">
+                            </td>
+
+                            <!-- OBSERVAÇÕES -->
+                            <td>
+                                <input type="text" name="observacao" value="{{ r.observacao or '' }}" placeholder="OBSERVAÇÃO" class="form-control-sheet inline-autosave" style="text-transform: uppercase;">
+                            </td>
+
+                            <!-- AÇÕES -->
+                            <td class="text-center" style="white-space: nowrap;">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Salvar Linha">Salvar</button>
+                        </form>
+                                <form method="POST" action="{{ url_for('planejamento.planejamento', inep=inep) }}" style="display:inline;" onsubmit="return confirm('Remover esta linha de planejamento?')">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="id" value="{{ r.id }}">
+                                    <input type="hidden" name="inep" value="{{ inep or '' }}">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Excluir Linha">✕</button>
+                                </form>
+                            </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusBox = document.getElementById('save-status');
+
+    document.querySelectorAll('.inline-autosave').forEach(function(elem) {
+        elem.addEventListener('change', function() {
+            const tr = this.closest('tr');
+            const regId = tr ? tr.getAttribute('data-id') : null;
+            const fieldName = this.getAttribute('name');
+            const fieldValue = this.value;
+
+            if (!regId || !fieldName) return;
+
+            fetch('{{ url_for("planejamento.autosave_planejamento") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: regId,
+                    campo: fieldName,
+                    valor: fieldValue
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'sucesso') {
+                    statusBox.style.display = 'inline';
+                    setTimeout(() => { statusBox.style.display = 'none'; }, 2500);
+                }
+            })
+            .catch(err => console.error('Erro no autosave:', err));
+        });
+    });
+});
+</script>
+
+<style>
+/* Estilo da caixa colapsável (Accordion) */
+.collapsible-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.collapsible-summary {
+    background-color: #f8fafc;
+    color: #003366;
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 12px 20px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #0056b3;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.collapsible-summary:hover {
+    background-color: #e2e8f0;
+}
+
+.collapsible-summary::-webkit-details-marker {
+    display: none;
+}
+
+details[open] .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.toggle-icon {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease-in-out;
+    color: #0056b3;
+}
+
+.form-control-sheet {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.88rem;
+}
+.form-control-sheet:focus {
+    border-color: #fd7e14;
+    outline: none;
+    box-shadow: 0 0 4px rgba(253, 126, 20, 0.4);
+}
+</style>
+{% endblock %}
