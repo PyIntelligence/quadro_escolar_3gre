@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Configurações PWA e Meta Tags -->
     <meta name="theme-color" content="#003366">
     <meta name="description" content="Levantamento Informativo do Quadro de Professores e Profissionais de Apoio - 3ª GRE 2026">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Quadro Escolar">
+    
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-    <title>{% block title %}Levantamento 3ª GRE 2026{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <title>{% block title %}Levantamento 3ª GRE 2026{% endblock %}</title>
     
     <style>
         .nav-link.active {
@@ -77,6 +82,32 @@
         <p>Dados de uso institucional — não compartilhar publicamente</p>
     </footer>
 
+    <!-- POP-UP DE INSTALAÇÃO PWA -->
+    <div id="pwa-install-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #ffffff; border-radius: 16px; max-width: 400px; width: 100%; padding: 24px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); font-family: system-ui, -apple-system, sans-serif;">
+            <h2 style="margin-top: 0; color: #1a1a1a; font-size: 22px;">Instale o Aplicativo</h2>
+            <p style="color: #666; font-size: 15px; line-height: 1.4;">Para acessar o sistema com melhor desempenho e abrir direto na tela do celular, adicione o app.</p>
+            
+            <!-- Botão para Android / Windows / Mac -->
+            <button id="pwa-install-btn" style="display: none; width: 100%; background: #003366; color: white; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                📲 Instalar Agora (1 Clique)
+            </button>
+
+            <!-- Instruções para iPhone / iPad (iOS) -->
+            <div id="pwa-ios-instructions" style="display: none; background: #f8f9fa; border: 1px dashed #ccc; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: left; font-size: 14px; color: #333;">
+                <p style="margin: 0 0 8px 0; font-weight: bold;">No Safari do iPhone:</p>
+                <ol style="margin: 0; padding-left: 20px; line-height: 1.5;">
+                    <li>Toque no botão <strong>Compartilhar</strong> 📤 (na barra inferior).</li>
+                    <li>Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong> ➕.</li>
+                </ol>
+            </div>
+
+            <button onclick="document.getElementById('pwa-install-modal').style.display='none'" style="background: transparent; border: none; color: #888; margin-top: 15px; cursor: pointer; text-decoration: underline;">
+                Continuar pelo navegador
+            </button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const seletores = document.querySelectorAll('select[name="codigo_inep_seletor"], select[name="inep"], select[name="escola_id"], select[name="selecionar_escola_id"], #seletor_escola, .seletor-escola');
@@ -90,6 +121,47 @@
                     }
                 });
             });
+        });
+
+        // Registra o Service Worker apontando para a raiz /sw.js
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso!'))
+                    .catch(err => console.log('Erro ao registrar Service Worker:', err));
+            });
+        }
+
+        // Lógica do Modal de Instalação PWA
+        let deferredPrompt;
+        const installModal = document.getElementById('pwa-install-modal');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const iosInstructions = document.getElementById('pwa-ios-instructions');
+
+        const isInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (!isInstalled) {
+            if (isIOS) {
+                iosInstructions.style.display = 'block';
+                installModal.style.display = 'flex';
+            }
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+            installModal.style.display = 'flex';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                installModal.style.display = 'none';
+            }
         });
     </script>
 

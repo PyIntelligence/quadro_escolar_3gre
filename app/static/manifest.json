@@ -1,21 +1,27 @@
 {
-  "short_name": "QuadroAulas",
-  "name": "Quadro de Aulas - Gestão Escolar",
+  "id": "/",
+  "short_name": "Quadro Escolar",
+  "name": "3ª GRE • Levantamento Quadro Escolar 2026",
+  "description": "Levantamento Informativo do Quadro de Professores e Profissionais de Apoio - 3ª GRE",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/icons/icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",
+  "scope": "/",
   "background_color": "#ffffff",
-  "theme_color": "#0d6efd",
+  "theme_color": "#003366",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "categories": ["education", "utilities"]
 }
