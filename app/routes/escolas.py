@@ -66,7 +66,7 @@ escolas_bp = Blueprint('escolas', __name__)
 
 class EscolaView:
     """Wrapper universal de compatibilidade para renderização em templates Jinja2."""
-    def __init__(self, e_id, inep, nome):
+    def __init__(self, e_id=None, inep="", nome="", municipio="", modalidade="", endereco="", zona="", email="", telefone="", gestor="", qtd_professores=0, competencia="AGOSTO/2026", confirmacao_responsavel="CONFIRMO AS INFORMAÇÕES", ultima_atualizacao=None, turnos_funcionamento="INTEGRAL", responsavel_preenchimento="", cargo_funcao="", ute="0000", **kwargs):
         self.id = e_id
         self.inep_visual = str(inep or '').strip()
         self.codigo_inep = str(inep or '').strip()
@@ -74,84 +74,175 @@ class EscolaView:
         self.nome = nome or "ESCOLA"
         self.unidade_escolar = nome or "ESCOLA"
 
+        # Função interna para higienizar marcações 'EMPTY_STRING' e 'NULL'
+        def limpar_campo(val, padrao=""):
+            if val is None:
+                return padrao
+            s = str(val).strip()
+            if s.upper() in ('EMPTY_STRING', 'NONE', 'NULL', 'RUA, Nº, BAIRRO', '(83) 90000-0000', 'ESCOLA@EDUCACAO.PB.GOV.BR'):
+                return padrao
+            return s
 
-def resolver_escola_oficial(val):
+        self.municipio = limpar_campo(municipio, "CAMPINA GRANDE")
+        self.modalidade = limpar_campo(modalidade, "")
+        self.endereco = limpar_campo(endereco, "")
+        self.zona = limpar_campo(zona, "URBANA")
+        self.email = limpar_campo(email, "")
+        self.telefone = limpar_campo(telefone, "")
+        self.gestor = limpar_campo(gestor, "")
+        self.ute = limpar_campo(ute, "0000")
+        self.turnos_funcionamento = limpar_campo(turnos_funcionamento, "INTEGRAL")
+        self.responsavel_preenchimento = limpar_campo(responsavel_preenchimento, "")
+        self.cargo_funcao = limpar_campo(cargo_funcao, "")
+        
+        self.qtd_professores = qtd_professores or 0
+        self.competencia = competencia or "AGOSTO/2026"
+        self.confirmacao_responsavel = confirmacao_responsavel or "CONFIRMO AS INFORMAÇÕES"
+        self.ultima_atualizacao = ultima_atualizacao
+
+        # Atribuição segura de atributos extras sem duplicidade
+        for k, v in kwargs.items():
+            if not hasattr(self, k):
+                setattr(self, k, limpar_campo(v) if isinstance(v, str) else v)
+
+
+def resolver_escola_completa(val):
     """
-    Resolvedor Universal do PostgreSQL:
-    Busca por INEP, ID Oficial, ID da tabela de Gestão Legada ou Profissional vinculado.
+    Busca e unifica os dados das tabelas 'escola' e 'escola_gestao',
+    coletando todos os IDs e INEPs vinculados para cruzamento perfeito.
     """
     if not val:
-        return None
+        return None, [], []
     val_str = str(val).strip()
     if not val_str:
-        return None
+        return None, [], []
     val_clean = val_str.lstrip('0')
+    gid = int(val_str) if val_str.isdigit() else -1
 
-    # 1. Busca por INEP na tabela oficial 'escola'
+    dados = {}
+    ids_encontrados = set()
+    ineps_encontrados = set()
+
+    if val_str:
+        ineps_encontrados.add(val_str)
+        ineps_encontrados.add(val_clean)
+    if gid > 0:
+        ids_encontrados.add(gid)
+
+    # 1. Busca na tabela 'escola'
     try:
         sql1 = db.text("""
-            SELECT id, inep_visual, nome FROM escola 
+            SELECT * FROM escola 
             WHERE LTRIM(TRIM(CAST(inep_visual AS VARCHAR)), '0') = :clean
                OR TRIM(CAST(inep_visual AS VARCHAR)) = :raw
+               OR id = :gid
             LIMIT 1
         """)
-        row = db.session.execute(sql1, {"clean": val_clean, "raw": val_str}).fetchone()
-        if row:
-            return row
+        r1 = db.session.execute(sql1, {"clean": val_clean, "raw": val_str, "gid": gid}).fetchone()
+        if r1:
+            d1 = dict(r1._mapping) if hasattr(r1, '_mapping') else {}
+            dados.update(d1)
+            if d1.get('id'):
+                ids_encontrados.add(d1['id'])
+            inep_v = str(d1.get('inep_visual') or d1.get('codigo_inep') or '').strip()
+            if inep_v:
+                ineps_encontrados.add(inep_v)
+                ineps_encontrados.add(inep_v.lstrip('0'))
     except Exception:
         db.session.rollback()
 
-    # 2. Busca por ID numérico na tabela oficial 'escola'
-    if val_str.isdigit():
-        try:
-            sql2 = db.text("SELECT id, inep_visual, nome FROM escola WHERE id = :eid LIMIT 1")
-            row = db.session.execute(sql2, {"eid": int(val_str)}).fetchone()
-            if row:
-                return row
-        except Exception:
-            db.session.rollback()
-
-    # 3. Busca por INEP ou ID na tabela legada 'escola_gestao' via JOIN
+    # 2. Busca na tabela 'escola_gestao'
     try:
-        sql3 = db.text("""
-            SELECT e.id, e.inep_visual, e.nome 
-            FROM escola e
-            JOIN escola_gestao g 
-              ON LTRIM(TRIM(CAST(g.codigo_inep AS VARCHAR)), '0') = LTRIM(TRIM(CAST(e.inep_visual AS VARCHAR)), '0')
-            WHERE LTRIM(TRIM(CAST(g.codigo_inep AS VARCHAR)), '0') = :clean
-               OR TRIM(CAST(g.codigo_inep AS VARCHAR)) = :raw
-               OR g.id = :gid
-            LIMIT 1
-        """)
-        gid = int(val_str) if val_str.isdigit() else -1
-        row = db.session.execute(sql3, {"clean": val_clean, "raw": val_str, "gid": gid}).fetchone()
-        if row:
-            return row
-    except Exception:
-        db.session.rollback()
-
-    # 4. Fallback direto na tabela 'escola_gestao'
-    try:
-        sql4 = db.text("""
-            SELECT id, codigo_inep AS inep_visual, unidade_escolar AS nome 
-            FROM escola_gestao 
+        sql2 = db.text("""
+            SELECT * FROM escola_gestao 
             WHERE LTRIM(TRIM(CAST(codigo_inep AS VARCHAR)), '0') = :clean
                OR TRIM(CAST(codigo_inep AS VARCHAR)) = :raw
                OR id = :gid
             LIMIT 1
         """)
-        gid = int(val_str) if val_str.isdigit() else -1
-        row = db.session.execute(sql4, {"clean": val_clean, "raw": val_str, "gid": gid}).fetchone()
-        if row:
-            return row
+        r2 = db.session.execute(sql2, {"clean": val_clean, "raw": val_str, "gid": gid}).fetchone()
+        if r2:
+            d2 = dict(r2._mapping) if hasattr(r2, '_mapping') else {}
+            if d2.get('id'):
+                ids_encontrados.add(d2['id'])
+            inep_g = str(d2.get('codigo_inep') or d2.get('inep_visual') or '').strip()
+            if inep_g:
+                ineps_encontrados.add(inep_g)
+                ineps_encontrados.add(inep_g.lstrip('0'))
+            
+            for k, v in d2.items():
+                v_str = str(v).strip().upper() if v else ''
+                if k not in dados or not dados[k] or v_str in ['NONE', 'NULL', 'EMPTY_STRING', '']:
+                    dados[k] = v
     except Exception:
         db.session.rollback()
 
-    return None
+    # Mapeamento de sinônimos
+    if not dados.get('municipio') or str(dados.get('municipio')).strip().upper() == 'EMPTY_STRING':
+        dados['municipio'] = dados.get('cidade') or dados.get('nome_municipio') or 'CAMPINA GRANDE'
+    if not dados.get('endereco') or str(dados.get('endereco')).strip().upper() == 'EMPTY_STRING':
+        dados['endereco'] = dados.get('logradouro') or ''
+    if not dados.get('gestor') or str(dados.get('gestor')).strip().upper() == 'EMPTY_STRING':
+        dados['gestor'] = dados.get('diretor') or dados.get('nome_gestor') or ''
+    if not dados.get('telefone') or str(dados.get('telefone')).strip().upper() == 'EMPTY_STRING':
+        dados['telefone'] = dados.get('fone') or dados.get('num_telefone') or ''
+    if not dados.get('email') or str(dados.get('email')).strip().upper() == 'EMPTY_STRING':
+        dados['email'] = dados.get('email_institucional') or ''
+
+    return (dados if dados else None), list(ids_encontrados), list(ineps_encontrados)
+
+
+def contar_professores_escola(ids_list, ineps_list):
+    """Calcula o total real de professores vinculados consultando todas as tabelas."""
+    if not ids_list and not ineps_list:
+        return 0
+        
+    clean_ineps = tuple(set([str(x).strip().lstrip('0') for x in ineps_list if x]) or ['___none___'])
+    ids_tuple = tuple([int(x) for x in ids_list if str(x).isdigit()] or [-1])
+
+    total = 0
+
+    try:
+        sql_p = db.text("""
+            SELECT COUNT(DISTINCT id) FROM professores 
+            WHERE escola_id IN :ids 
+               OR LTRIM(TRIM(CAST(COALESCE(escola_inep, codigo_inep, inep, '') AS VARCHAR)), '0') IN :cleans
+        """)
+        res = db.session.execute(sql_p, {"ids": ids_tuple, "cleans": clean_ineps}).scalar()
+        if res and res > 0:
+            total = max(total, res)
+    except Exception:
+        db.session.rollback()
+
+    try:
+        sql_p2 = db.text("""
+            SELECT COUNT(DISTINCT id) FROM professor 
+            WHERE escola_id IN :ids 
+               OR LTRIM(TRIM(CAST(COALESCE(escola_inep, codigo_inep, inep, '') AS VARCHAR)), '0') IN :cleans
+        """)
+        res2 = db.session.execute(sql_p2, {"ids": ids_tuple, "cleans": clean_ineps}).scalar()
+        if res2 and res2 > 0:
+            total = max(total, res2)
+    except Exception:
+        db.session.rollback()
+
+    try:
+        sql_a = db.text("""
+            SELECT COUNT(DISTINCT COALESCE(professor_id, professor_cpf, professor_nome)) FROM atuacao 
+            WHERE escola_id IN :ids 
+               OR LTRIM(TRIM(CAST(COALESCE(codigo_inep, inep, '') AS VARCHAR)), '0') IN :cleans
+        """)
+        res3 = db.session.execute(sql_a, {"ids": ids_tuple, "cleans": clean_ineps}).scalar()
+        if res3 and res3 > 0:
+            total = max(total, res3)
+    except Exception:
+        db.session.rollback()
+
+    return total
 
 
 def obter_escola_atual():
-    """Identifica e fixa a escola ativa sincronizando todas as chaves de sessão."""
+    """Identifica a escola ativa e calcula a quantidade real de professores."""
     candidatos = [
         request.args.get('inep'),
         request.args.get('codigo_inep'),
@@ -168,29 +259,33 @@ def obter_escola_atual():
         session.get('escola_id'),
     ]
 
-    row = None
+    dados_escola = None
+    ids_lista, ineps_lista = [], []
+
     for cand in candidatos:
         if cand:
-            row = resolver_escola_oficial(cand)
-            if row:
+            dados_escola, ids_lista, ineps_lista = resolver_escola_completa(cand)
+            if dados_escola:
                 break
 
-    if not row:
+    if not dados_escola:
         try:
-            row = db.session.execute(db.text("SELECT id, inep_visual, nome FROM escola ORDER BY id LIMIT 1")).fetchone()
+            r = db.session.execute(db.text("SELECT * FROM escola ORDER BY id LIMIT 1")).fetchone()
+            if r:
+                dados_escola = dict(r._mapping) if hasattr(r, '_mapping') else {}
+                ids_lista = [dados_escola.get('id')] if dados_escola.get('id') else []
+                ineps_lista = [dados_escola.get('inep_visual')] if dados_escola.get('inep_visual') else []
         except Exception:
             db.session.rollback()
 
-    if not row:
-        try:
-            row = db.session.execute(db.text("SELECT id, codigo_inep AS inep_visual, unidade_escolar AS nome FROM escola_gestao ORDER BY id LIMIT 1")).fetchone()
-        except Exception:
-            db.session.rollback()
-
-    if not row:
+    if not dados_escola:
         return None
 
-    e_id, e_inep, e_nome = row[0], str(row[1] or '').strip(), str(row[2] or '').strip()
+    e_id = dados_escola.get('id')
+    e_inep = str(dados_escola.get('inep_visual') or dados_escola.get('codigo_inep') or dados_escola.get('inep') or '').strip()
+    e_nome = str(dados_escola.get('nome') or dados_escola.get('unidade_escolar') or '').strip()
+
+    total_professores = contar_professores_escola(ids_lista, ineps_lista)
 
     session.permanent = True
     session['active_inep'] = e_inep
@@ -202,17 +297,82 @@ def obter_escola_atual():
     session['id'] = e_id
     session['escola_nome'] = e_nome
 
-    escola_obj = None
-    if Escola:
+    chaves_explicitas = {
+        'id', 'inep', 'inep_visual', 'codigo_inep', 'nome', 'unidade_escolar',
+        'municipio', 'modalidade', 'endereco', 'zona', 'email', 'telefone',
+        'gestor', 'qtd_professores', 'competencia', 'confirmacao_responsavel',
+        'ultima_atualizacao', 'turnos_funcionamento', 'responsavel_preenchimento',
+        'cargo_funcao', 'ute'
+    }
+    extra_kwargs = {k: v for k, v in dados_escola.items() if k not in chaves_explicitas}
+
+    escola_obj = EscolaView(
+        e_id=e_id,
+        inep=e_inep,
+        nome=e_nome,
+        municipio=dados_escola.get('municipio', 'CAMPINA GRANDE'),
+        modalidade=dados_escola.get('modalidade', ''),
+        endereco=dados_escola.get('endereco', ''),
+        zona=dados_escola.get('zona', 'URBANA'),
+        email=dados_escola.get('email', ''),
+        telefone=dados_escola.get('telefone', ''),
+        gestor=dados_escola.get('gestor', ''),
+        ute=dados_escola.get('ute', '0000'),
+        qtd_professores=total_professores,
+        turnos_funcionamento=dados_escola.get('turnos_funcionamento', 'INTEGRAL'),
+        responsavel_preenchimento=dados_escola.get('responsavel_preenchimento', ''),
+        cargo_funcao=dados_escola.get('cargo_funcao', ''),
+        competencia=dados_escola.get('competencia', 'AGOSTO/2026'),
+        confirmacao_responsavel=dados_escola.get('confirmacao_responsavel', 'CONFIRMO AS INFORMAÇÕES'),
+        ultima_atualizacao=dados_escola.get('ultima_atualizacao'),
+        **extra_kwargs
+    )
+
+    return escola_obj
+
+
+def salvar_dados_escola_banco(inep_or_id, form_data):
+    """Salva as alterações em ambas as tabelas 'escola' e 'escola_gestao'."""
+    if not inep_or_id:
+        return
+    clean = str(inep_or_id).strip().lstrip('0')
+    raw = str(inep_or_id).strip()
+    gid = int(raw) if raw.isdigit() else -1
+
+    campos_ignorados = {'id', 'csrf_token', 'action', 'codigo_inep_seletor', 'escola_id', 'selecionar_escola_id'}
+
+    for campo, valor in form_data.items():
+        if campo in campos_ignorados:
+            continue
+        
         try:
-            escola_obj = Escola.query.get(e_id)
+            sql_e = db.text(f"""
+                UPDATE escola 
+                SET {campo} = :val, ultima_atualizacao = NOW()
+                WHERE LTRIM(TRIM(CAST(inep_visual AS VARCHAR)), '0') = :clean
+                   OR TRIM(CAST(inep_visual AS VARCHAR)) = :raw
+                   OR id = :gid
+            """)
+            db.session.execute(sql_e, {"val": valor, "clean": clean, "raw": raw, "gid": gid})
         except Exception:
             db.session.rollback()
 
-    if not escola_obj:
-        escola_obj = EscolaView(e_id, e_inep, e_nome)
+        try:
+            sql_g = db.text(f"""
+                UPDATE escola_gestao 
+                SET {campo} = :val, ultima_atualizacao = NOW()
+                WHERE LTRIM(TRIM(CAST(codigo_inep AS VARCHAR)), '0') = :clean
+                   OR TRIM(CAST(codigo_inep AS VARCHAR)) = :raw
+                   OR id = :gid
+            """)
+            db.session.execute(sql_g, {"val": valor, "clean": clean, "raw": raw, "gid": gid})
+        except Exception:
+            db.session.rollback()
 
-    return escola_obj
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 # --- HOME / LISTA GERAL DE ESCOLAS ---
@@ -245,29 +405,39 @@ def escola():
     escola_obj = obter_escola_atual()
 
     if request.method == 'POST' and escola_obj:
-        campos_ignorados = {'id', 'csrf_token', 'action', 'codigo_inep_seletor', 'escola_id', 'selecionar_escola_id'}
-        
-        form_tem_dados = any(k not in campos_ignorados for k in request.form)
-        if form_tem_dados:
-            for campo in request.form:
-                if campo not in campos_ignorados and hasattr(escola_obj, campo):
-                    setattr(escola_obj, campo, request.form.get(campo))
-
-            try:
-                db.session.commit()
-                flash('Dados salvos com sucesso!', 'success')
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Erro ao salvar os dados: {str(e)}', 'danger')
-
+        salvar_dados_escola_banco(escola_obj.codigo_inep or escola_obj.id, request.form)
+        flash('Dados salvos com sucesso!', 'success')
         active_inep = session.get('active_inep', '')
         return redirect(url_for('escolas.escola', inep=active_inep))
 
     todas_escolas = []
     try:
-        sql_todas = db.text("SELECT id, inep_visual, nome FROM escola ORDER BY nome")
+        sql_todas = db.text("SELECT * FROM escola ORDER BY nome")
         rows_todas = db.session.execute(sql_todas).fetchall()
-        todas_escolas = [EscolaView(r[0], r[1], r[2]) for r in rows_todas]
+        chaves_explicitas = {
+            'id', 'inep', 'inep_visual', 'codigo_inep', 'nome', 'unidade_escolar',
+            'municipio', 'modalidade', 'endereco', 'zona', 'email', 'telefone',
+            'gestor', 'qtd_professores', 'competencia', 'confirmacao_responsavel',
+            'ultima_atualizacao', 'turnos_funcionamento', 'responsavel_preenchimento',
+            'cargo_funcao', 'ute'
+        }
+        for r in rows_todas:
+            d = dict(r._mapping) if hasattr(r, '_mapping') else {}
+            extra_d = {k: v for k, v in d.items() if k not in chaves_explicitas}
+            todas_escolas.append(EscolaView(
+                e_id=d.get('id'),
+                inep=str(d.get('inep_visual') or d.get('codigo_inep') or '').strip(),
+                nome=str(d.get('nome') or d.get('unidade_escolar') or '').strip(),
+                municipio=d.get('municipio', 'CAMPINA GRANDE'),
+                modalidade=d.get('modalidade', ''),
+                endereco=d.get('endereco', ''),
+                zona=d.get('zona', 'URBANA'),
+                email=d.get('email', ''),
+                telefone=d.get('telefone', ''),
+                gestor=d.get('gestor', ''),
+                ute=d.get('ute', '0000'),
+                **extra_d
+            ))
     except Exception:
         db.session.rollback()
 
@@ -290,29 +460,12 @@ def autosave_escola():
     campo = data.get('campo')
     valor = data.get('valor')
 
-    if not codigo_inep or not campo or not Escola:
+    if not codigo_inep or not campo:
         return jsonify({"status": "erro", "mensagem": "Dados inválidos"}), 400
 
-    try:
-        inep_clean = str(codigo_inep).strip().lstrip('0')
-        sql = db.text("SELECT id FROM escola WHERE LTRIM(TRIM(CAST(inep_visual AS VARCHAR)), '0') = :inep LIMIT 1")
-        res = db.session.execute(sql, {"inep": inep_clean}).fetchone()
-        
-        escola_obj = Escola.query.get(res[0]) if res else None
-
-        if escola_obj and hasattr(escola_obj, campo):
-            setattr(escola_obj, campo, valor)
-            if hasattr(escola_obj, 'ultima_atualizacao'):
-                escola_obj.ultima_atualizacao = datetime.now()
-            db.session.commit()
-            
-            data_formatada = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-            return jsonify({"status": "sucesso", "ultima_atualizacao": data_formatada})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"status": "erro", "mensagem": str(e)}), 500
-
-    return jsonify({"status": "erro", "mensagem": "Escola não encontrada"}), 404
+    salvar_dados_escola_banco(codigo_inep, {campo: valor})
+    data_formatada = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    return jsonify({"status": "sucesso", "ultima_atualizacao": data_formatada})
 
 
 # Sincronização SIAGE / Playwright
@@ -405,48 +558,3 @@ def stream_progresso_siage():
             time.sleep(0.8)
 
     return Response(stream_with_context(gerar_eventos()), mimetype='text/event-stream')
-
-
-# @escolas_bp.route('/atuacao', methods=['GET', 'POST'])
-# def atuacao():
-#     escola_obj = obter_escola_atual()
-#     return render_template('atuacao.html', escola=escola_obj, registro=escola_obj)
-
-
-# @escolas_bp.route('/quadro_informado', methods=['GET', 'POST'])
-# def quadro_informado():
-#     escola_obj = obter_escola_atual()
-#     return render_template('quadro_informado.html', escola=escola_obj, registro=escola_obj)
-
-
-# @escolas_bp.route('/quadro_escolar', methods=['GET', 'POST'])
-# def quadro_escolar():
-#     escola_obj = obter_escola_atual()
-#     return render_template('quadro_escolar.html', escola=escola_obj, registro=escola_obj)
-
-
-# @escolas_bp.route('/conferencia_final', methods=['GET', 'POST'])
-# def conferencia_final():
-#     escola_obj = obter_escola_atual()
-#     total_profs = len(escola_obj.professores) if escola_obj and hasattr(escola_obj, 'professores') else 0
-#     indicadores = {
-#         'total_professores': total_profs,
-#         'saldo_ch_geral': 0.0,
-#         'ch_necessaria': 0.0,
-#         'ch_atendida': 0.0,
-#         'diferenca_ch': 0.0,
-#     }
-#     return render_template('conferencia_final.html', escola=escola_obj, registro=escola_obj, indicadores=indicadores)
-
-
-# @escolas_bp.route('/confirmacao_final', methods=['GET', 'POST'])
-# def confirmacao_final():
-#     escola_obj = obter_escola_atual()
-#     total_profs = len(escola_obj.professores) if escola_obj and hasattr(escola_obj, 'professores') else 0
-#     resumo = {
-#         'total_professores': total_profs,
-#         'saldo_ch_geral': 0.0,
-#         'ch_necessaria': 0.0,
-#         'ch_atendida': 0.0,
-#     }
-#     return render_template('confirmacao_final.html', escola=escola_obj, registro=escola_obj, resumo=resumo)
