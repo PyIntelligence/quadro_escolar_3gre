@@ -846,10 +846,50 @@ tr:nth-child(even) { background: #f8f9fa; }
         font-size: 1rem;
     }
 
-    .tabela-dupla-cor th, 
-    .tabela-dupla-cor .td-conteudo {
-        display: block;
+    /* Reordenação visual da tabela de duas colunas para smartphones */
+    .tabela-dupla-cor {
+        display: flex !important;
+        flex-direction: column !important;
         width: 100% !important;
+    }
+
+    .tabela-dupla-cor thead,
+    .tabela-dupla-cor tbody,
+    .tabela-dupla-cor tr {
+        display: contents !important;
+    }
+
+    /* 1º: Título Azul (Objetivo do Levantamento) */
+    .tabela-dupla-cor .th-azul {
+        order: 1;
+        display: block !important;
+        width: 100% !important;
+        border-radius: 6px 6px 0 0;
+    }
+
+    /* 2º: Conteúdo do Objetivo */
+    .tabela-dupla-cor tbody tr td:nth-child(1) {
+        order: 2;
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 15px;
+        border-radius: 0 0 6px 6px;
+    }
+
+    /* 3º: Título Vermelho (Responsabilidades Institucionais) */
+    .tabela-dupla-cor .th-vermelho {
+        order: 3;
+        display: block !important;
+        width: 100% !important;
+        border-radius: 6px 6px 0 0;
+    }
+
+    /* 4º: Conteúdo das Responsabilidades */
+    .tabela-dupla-cor tbody tr td:nth-child(2) {
+        order: 4;
+        display: block !important;
+        width: 100% !important;
+        border-radius: 0 0 6px 6px;
     }
 
     .ordem-row {
