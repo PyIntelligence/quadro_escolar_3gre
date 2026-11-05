@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <!-- Configurações PWA e Meta Tags -->
     <meta name="theme-color" content="#003366">
@@ -18,6 +18,20 @@
     <title>{% block title %}Levantamento 3ª GRE 2026{% endblock %}</title>
     
     <style>
+        /* Correção global para evitar zoom em formulários no iOS (Safari) */
+        input, select, textarea, button {
+            font-size: 16px !important;
+        }
+
+        html, body {
+            max-width: 100vw;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* Estilização da Navegação e Links Ativos */
         .nav-link.active {
             font-weight: bold;
             border-radius: 4px;
@@ -33,6 +47,62 @@
         .nav-link.nav-quadro-escolar.active { background-color: #20c997 !important; color: #ffffff !important; }
         .nav-link.nav-conferencia.active { background-color: #ffc107 !important; color: #212529 !important; }
         .nav-link.nav-confirmacao.active { background-color: #0d6efd !important; color: #ffffff !important; }
+
+        /* Ajustes responsivos para o menu móvel */
+        .top-nav {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background-color: #003366;
+            color: #ffffff;
+        }
+
+        .nav-brand {
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .nav-menu-toggle {
+            display: none;
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu-toggle {
+                display: block;
+            }
+            .nav-links {
+                display: none;
+                width: 100%;
+                flex-direction: column;
+                align-items: stretch;
+                padding-top: 10px;
+            }
+            .nav-links.show {
+                display: flex;
+            }
+            .nav-link {
+                display: block;
+                text-align: center;
+                padding: 8px 12px;
+            }
+        }
     </style>
 
     {% block head %}{% endblock %}
@@ -43,7 +113,11 @@
     <nav class="top-nav">
         <a href="{{ url_for('escolas.index') }}" class="nav-brand">3ª GRE • Levantamento 2026</a>
         
-        <div class="nav-links">
+        <button class="nav-menu-toggle" id="nav-toggle-btn" aria-label="Abrir Menu">
+            ☰ Menu
+        </button>
+        
+        <div class="nav-links" id="nav-links-container">
             <a href="{{ url_for('escolas.index') }}" class="nav-link nav-inicio {% if request.endpoint == 'escolas.index' %}active{% endif %}">Início</a>
             
             <a href="{{ url_for('escolas.escola', inep=active_inep) if active_inep else url_for('escolas.escola') }}" class="nav-link nav-escola {% if request.endpoint == 'escolas.escola' %}active{% endif %}">Escola</a>
@@ -110,6 +184,16 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Toggle do menu móvel
+            const toggleBtn = document.getElementById('nav-toggle-btn');
+            const navLinks = document.getElementById('nav-links-container');
+            if (toggleBtn && navLinks) {
+                toggleBtn.addEventListener('click', function() {
+                    navLinks.classList.toggle('show');
+                });
+            }
+
+            // Mudança de INEP nos seletores
             const seletores = document.querySelectorAll('select[name="codigo_inep_seletor"], select[name="inep"], select[name="escola_id"], select[name="selecionar_escola_id"], #seletor_escola, .seletor-escola');
             seletores.forEach(function(seletor) {
                 seletor.addEventListener('change', function() {
@@ -123,10 +207,10 @@
             });
         });
 
-        // Registra o Service Worker apontando para a raiz /sw.js
+        // Registra o Service Worker via url_for do Flask para evitar erros de rota
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
                     .then(reg => console.log('Service Worker registrado com sucesso!'))
                     .catch(err => console.log('Erro ao registrar Service Worker:', err));
             });
