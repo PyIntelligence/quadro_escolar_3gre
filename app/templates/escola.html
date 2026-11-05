@@ -89,6 +89,12 @@
                 </td>
             </tr>
             <tr>
+                <td class="td-label">CÓDIGO UTE</td>
+                <td class="td-field field-blue">
+                    <input type="text" name="ute" class="autosave-field" value="{{ e.ute if e and e.ute and e.ute != 'NONE' else '' }}" placeholder="UTE" style="text-transform:uppercase">
+                </td>
+            </tr>
+            <tr>
                 <td class="td-label">MODALIDADE</td>
                 <td class="td-field field-blue">
                     <input type="text" name="modalidade" class="autosave-field" value="{{ e.modalidade if e and e.modalidade and e.modalidade != 'NONE' else '' }}" style="text-transform:uppercase">
@@ -138,8 +144,8 @@
             </tr>
             <tr>
                 <td class="td-label">QUANTIDADE DE PROFESSORES CADASTRADOS EM EXERCÍCIO</td>
-                <td class="td-field text-center">
-                    <input type="number" name="qtd_professores" value="{{ e.qtd_professores if e and e.qtd_professores else 0 }}" readonly class="input-readonly">
+                <td class="td-field text-center field-yellow">
+                    <input type="number" name="qtd_professores" class="autosave-field text-center" value="{{ e.qtd_professores if e and e.qtd_professores is not none else 0 }}" min="0" placeholder="0">
                 </td>
             </tr>
             <tr>
@@ -227,6 +233,9 @@
                         <option value="INTEGRAL" {% if e and e.turnos_funcionamento == 'INTEGRAL' %}selected{% endif %}>INTEGRAL</option>
                         <option value="MANHÃ/TARDE" {% if e and e.turnos_funcionamento == 'MANHÃ/TARDE' %}selected{% endif %}>MANHÃ/TARDE</option>
                         <option value="MANHÃ/TARDE/NOITE" {% if e and e.turnos_funcionamento == 'MANHÃ/TARDE/NOITE' %}selected{% endif %}>MANHÃ/TARDE/NOITE</option>
+                        <option value="MANHÃ" {% if e and e.turnos_funcionamento == 'MANHÃ' %}selected{% endif %}>MANHÃ</option>
+                        <option value="TARDE" {% if e and e.turnos_funcionamento == 'TARDE' %}selected{% endif %}>TARDE</option>
+                        <option value="NOITE" {% if e and e.turnos_funcionamento == 'NOITE' %}selected{% endif %}>NOITE</option>
                     </select>
                 </td>
             </tr>
@@ -414,14 +423,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const timers = {};
 
     fields.forEach(field => {
-        const badge = document.createElement('span');
-        badge.className = 'status-save-badge';
-        badge.id = `badge-${field.name}`;
-        
-        if (field.nextSibling) {
-            field.parentNode.insertBefore(badge, field.nextSibling);
-        } else {
-            field.parentNode.appendChild(badge);
+        let badge = field.parentNode.querySelector(`.status-save-badge[data-for="${field.name}"]`);
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'status-save-badge';
+            badge.setAttribute('data-for', field.name);
+            badge.id = `badge-${field.name}`;
+            if (field.nextSibling) {
+                field.parentNode.insertBefore(badge, field.nextSibling);
+            } else {
+                field.parentNode.appendChild(badge);
+            }
         }
 
         const eventType = field.tagName.toLowerCase() === 'select' ? 'change' : 'input';
@@ -439,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             timers[inputName] = setTimeout(() => {
                 salvarCampo(inputName, e.target.value, field, badge);
-            }, 400);
+            }, 350);
         });
     });
 
@@ -464,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.status === "sucesso") {
+            if (data.status === "sucesso" || data.sucesso) {
                 field.classList.remove('field-salvando');
                 field.classList.add('field-salvo');
                 badge.className = 'status-save-badge salvo';
@@ -497,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Função para tratar a troca de escola no seletor
 function solicitarSenhaEscola(selectElem) {
     const inep = selectElem.value;
     if (inep) {
